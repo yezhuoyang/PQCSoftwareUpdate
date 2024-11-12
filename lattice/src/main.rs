@@ -1,23 +1,35 @@
-use std::io;
-use rand::Rng;
 
+
+
+struct Keypair{
+    publickey: u32,
+    secretekey:u32
+}
+
+
+impl Keypair{
+    
+
+    fn new(publickey: u32, secretekey: u32) -> Keypair{
+        Keypair{publickey,secretekey}
+    }
+
+    fn printkey(&self){
+        println!("The keypair is {} , {}",self.publickey,self.secretekey);
+    }
+
+    fn setkeys(&mut self,publickey: u32, secretekey: u32){
+        self.publickey=publickey;
+        self.secretekey=secretekey;
+    }
+
+
+}
 
 
 fn main(){
-    println!("Guess the number!");
-
-    let secret_number = rand::thread_rng().gen_range(1..=100);
-
-
-    println!("The secret number is : {secret_number}");
-
-    println!("Please input your guess");
-
-    let mut guess = String::new();
-
-    io::stdin().read_line(&mut guess).expect("Fauled to read line");
-
-
-    println!("You guessed: {}", guess);
-
+    let mut keypair=Keypair::new(31,32);
+    keypair.printkey();
+    keypair.setkeys(3241,1231);
+    keypair.printkey();
 }
