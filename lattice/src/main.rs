@@ -2,6 +2,9 @@ use std::ops::{Add, Mul, Rem};
 use sha3::{Shake256, digest::{Update, ExtendableOutput, XofReader}};
 use std::fs::File;
 use std::io::{self, Read};
+use rand::Rng;
+use rand_distr::{Distribution, Normal};
+
 
 /// Reads a file in binary mode and returns its SHAKE-256 hash.
 fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Result<String> {
@@ -47,76 +50,48 @@ impl Polynomial {
         self.coefficients.len() - 1
     }
 
-    /// Shifts a polynomial by a given number of degrees (multiply by x^degree).
-    fn shift(&self, degree: usize) -> Polynomial {
+    /// Shifts a polynomial by a given number of degrees (multiply by x^degree),
+    /// ensuring that the degree does not exceed the modulus φ(x).
+    fn shift(&self, degree: usize, phi: &Polynomial) -> Polynomial {
+        // Create a shifted polynomial by appending `degree` zeros
         let mut new_coeffs = vec![0; degree];
         new_coeffs.extend(&self.coefficients);
-        Polynomial::new(new_coeffs, self.q)
+
+        // Create a new Polynomial object
+        let shifted_poly = Polynomial::new(new_coeffs, self.q);
+
+        // Reduce the shifted polynomial modulo φ(x)
+        shifted_poly.mod_phi(phi)
     }
 
-    /// Polynomial modulo φ(x)
+
+    //Modulus of the polynomial
     fn mod_phi(&self, phi: &Polynomial) -> Polynomial {
-        let mut result = self.clone();
 
-        while result.degree() >= phi.degree() {
-            // Find the leading coefficient and degree difference
-            let degree_diff = result.degree() - phi.degree();
-            let leading_coeff = result.coefficients[result.degree()];
-
-            // Subtract (leading_coeff * x^degree_diff * φ)
-            for (i, &coeff) in phi.coefficients.iter().enumerate() {
-                let index = degree_diff + i;
-                if index < result.coefficients.len() {
-                    result.coefficients[index] =
-                        (result.coefficients[index] - leading_coeff * coeff).rem_euclid(self.q);
-                }
-            }
-
-            // Remove leading zeros
-            while let Some(&last) = result.coefficients.last() {
-                if last == 0 {
-                    result.coefficients.pop();
-                } else {
-                    break;
-                }
-            }
-        }
-
-        // Reduce all coefficients modulo q to ensure they are in [0, q-1]
-        for coeff in &mut result.coefficients {
-            *coeff = coeff.rem_euclid(self.q);
-        }
-
-        // Adjust the size of the result to match the degree of φ
-        let mut adjusted_coeffs = vec![0; phi.degree()];
-        for (i, &coeff) in result.coefficients.iter().enumerate() {
-            adjusted_coeffs[i] = coeff;
-        }
-
-        Polynomial::new(adjusted_coeffs, self.q)
     }
+    
+    
 
-    /// Generate the matrix representation of the polynomial modulo φ(x).
     fn to_matrix(&self, phi: &Polynomial) -> Vec<Vec<i32>> {
         let n = phi.degree(); // Degree of φ
         let mut matrix = vec![vec![0; n]; n]; // Initialize an n x n matrix
-
+    
         for i in 0..n {
-            // Compute x^i * f mod φ
-            let shifted_poly = self.shift(i);
+            // Pass both the shift degree and the modulus polynomial
+            let shifted_poly = self.shift(i, phi);
             let reduced_poly = shifted_poly.mod_phi(phi);
-
+    
             println!(
                 "x^{} * f = {:?} mod φ = {:?}",
                 i, shifted_poly.coefficients, reduced_poly.coefficients
             );
-
+    
             // Fill the row with the reduced coefficients
             for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
                 matrix[i][j] = coeff;
             }
         }
-
+    
         matrix
     }
 }
@@ -191,6 +166,31 @@ impl NtruKeys {
     }
 }
 
+
+
+/// Generates a polynomial with coefficients sampled from a Gaussian distribution.
+/// 
+/// # Arguments:
+/// - `n`: The degree of the polynomial.
+/// - `mean`: The mean of the Gaussian distribution (usually 0).
+/// - `std_dev`: The standard deviation of the Gaussian distribution.
+/// 
+/// # Returns:
+/// - A vector of sampled coefficients.
+fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i32> {
+    // Create a normal distribution with the specified mean and standard deviation
+    let normal = Normal::new(mean, std_dev).unwrap();
+
+    // Initialize random number generator
+    let mut rng = rand::thread_rng();
+
+    // Generate coefficients
+    (0..=n)
+        .map(|_| normal.sample(&mut rng).round() as i32) // Sample and round to nearest integer
+        .collect()
+}
+
+
 /*
 fn main() {
     let file_path = "C:/Users/73747/Documents/GitHub/PQCSoftwareUpdate/text.bin"; // Replace with your file path
@@ -245,7 +245,7 @@ mod tests {
 
 
 
-
+/*
 fn main() {
     // Example: Representing a polynomial as a matrix
     let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
@@ -265,3 +265,26 @@ fn main() {
 
     println!("Public key h: {:?}", keys.h);
 }
+*/
+
+
+fn main() {
+    let degree = 20; // Degree of the polynomial
+    let mean = 0.0; // Mean of the Gaussian distribution
+    let std_dev = 3.0; // Standard deviation of the Gaussian distribution
+
+    // Generate a polynomial
+    let polynomial = generate_gaussian_polynomial(degree, mean, std_dev);
+
+    println!("Generated polynomial coefficients: {:?}", polynomial);
+}
+
+
+/*
+fn main() {
+    // Example: Representing a polynomial as a matrix
+    let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
+    let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // f = x^2 + 1
+    let matrix = f.to_matrix(&phi);
+}
+*/
