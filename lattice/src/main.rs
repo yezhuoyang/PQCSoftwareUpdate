@@ -47,16 +47,32 @@ impl Polynomial {
         self.coefficients.len() - 1
     }
 
+    /// Shifts a polynomial by a given number of degrees (multiply by x^degree).
+    fn shift(&self, degree: usize) -> Polynomial {
+        let mut new_coeffs = vec![0; degree];
+        new_coeffs.extend(&self.coefficients);
+        Polynomial::new(new_coeffs, self.q)
+    }
+
     /// Polynomial modulo φ(x)
     fn mod_phi(&self, phi: &Polynomial) -> Polynomial {
         let mut result = self.clone();
+
         while result.degree() >= phi.degree() {
-            let factor = result.coefficients[result.degree()] / phi.coefficients[phi.degree()];
+            // Find the leading coefficient and degree difference
+            let degree_diff = result.degree() - phi.degree();
+            let leading_coeff = result.coefficients[result.degree()];
+
+            // Subtract (leading_coeff * x^degree_diff * φ)
             for (i, &coeff) in phi.coefficients.iter().enumerate() {
-                let index = result.degree() - phi.degree() + i;
-                result.coefficients[index] =
-                    (result.coefficients[index] - factor * coeff).rem_euclid(self.q);
+                let index = degree_diff + i;
+                if index < result.coefficients.len() {
+                    result.coefficients[index] =
+                        (result.coefficients[index] - leading_coeff * coeff).rem_euclid(self.q);
+                }
             }
+
+            // Remove leading zeros
             while let Some(&last) = result.coefficients.last() {
                 if last == 0 {
                     result.coefficients.pop();
@@ -65,21 +81,38 @@ impl Polynomial {
                 }
             }
         }
-        result
+
+        // Reduce all coefficients modulo q to ensure they are in [0, q-1]
+        for coeff in &mut result.coefficients {
+            *coeff = coeff.rem_euclid(self.q);
+        }
+
+        // Adjust the size of the result to match the degree of φ
+        let mut adjusted_coeffs = vec![0; phi.degree()];
+        for (i, &coeff) in result.coefficients.iter().enumerate() {
+            adjusted_coeffs[i] = coeff;
+        }
+
+        Polynomial::new(adjusted_coeffs, self.q)
     }
 
-    /// Generate the matrix representation of the polynomial
+    /// Generate the matrix representation of the polynomial modulo φ(x).
     fn to_matrix(&self, phi: &Polynomial) -> Vec<Vec<i32>> {
-        let n = phi.degree();
-        let mut matrix = vec![vec![0; n]; n];
+        let n = phi.degree(); // Degree of φ
+        let mut matrix = vec![vec![0; n]; n]; // Initialize an n x n matrix
 
         for i in 0..n {
-            let shifted_poly = Polynomial::new(
-                self.coefficients.iter().cycle().skip(i).take(n).cloned().collect(),
-                self.q,
+            // Compute x^i * f mod φ
+            let shifted_poly = self.shift(i);
+            let reduced_poly = shifted_poly.mod_phi(phi);
+
+            println!(
+                "x^{} * f = {:?} mod φ = {:?}",
+                i, shifted_poly.coefficients, reduced_poly.coefficients
             );
-            let row = shifted_poly.mod_phi(phi).coefficients;
-            for (j, &coeff) in row.iter().enumerate() {
+
+            // Fill the row with the reduced coefficients
+            for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
                 matrix[i][j] = coeff;
             }
         }
@@ -87,6 +120,8 @@ impl Polynomial {
         matrix
     }
 }
+
+
 
 /// Implement multiplication for Polynomial
 impl Mul for Polynomial {
@@ -102,6 +137,36 @@ impl Mul for Polynomial {
         Polynomial::new(result, self.q)
     }
 }
+
+
+fn test_polynomial_to_matrix() {
+    // Define the modulus
+    let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
+
+    // Define the polynomial f = x^2 + 1
+    let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
+
+    // Generate the matrix representation of f
+    let matrix = f.to_matrix(&phi);
+
+    // Expected result
+    let expected_matrix = vec![
+        vec![1, 0, 4, 0],
+        vec![0, 1, 0, 4],
+        vec![1, 0, 2, 0],
+        vec![0, 1, 0, 1],
+    ];
+
+    // Print the result
+    println!("Computed matrix:");
+    for row in &matrix {
+        println!("{:?}", row);
+    }
+
+    // Verify correctness
+    assert_eq!(matrix, expected_matrix, "Matrix representation is incorrect");
+}
+
 
 /// Represents the NTRU lattice keys
 struct NtruKeys {
@@ -126,7 +191,7 @@ impl NtruKeys {
     }
 }
 
-
+/*
 fn main() {
     let file_path = "C:/Users/73747/Documents/GitHub/PQCSoftwareUpdate/text.bin"; // Replace with your file path
     let hash_output_size = 64; // Output size in bytes (e.g., 64 for 512-bit hash)
@@ -140,8 +205,47 @@ fn main() {
         }
     }
 }
+*/
 
-/*
+
+
+#[cfg(test)]
+mod tests {
+    use super::*; // Import all items from the parent module
+
+    #[test]
+    fn test_polynomial_to_matrix() {
+        // Define the modulus
+        let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
+
+        // Define the polynomial f = x^2 + 1
+        let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
+
+        // Generate the matrix representation of f
+        let matrix = f.to_matrix(&phi);
+
+        // Expected result
+        let expected_matrix = vec![
+            vec![1, 0, 4, 0],
+            vec![0, 1, 0, 4],
+            vec![1, 0, 2, 0],
+            vec![0, 1, 0, 1],
+        ];
+
+        // Print the result (optional, for debugging purposes)
+        println!("Computed matrix:");
+        for row in &matrix {
+            println!("{:?}", row);
+        }
+
+        // Verify correctness
+        assert_eq!(matrix, expected_matrix, "Matrix representation is incorrect");
+    }
+}
+
+
+
+
 fn main() {
     // Example: Representing a polynomial as a matrix
     let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
@@ -161,4 +265,3 @@ fn main() {
 
     println!("Public key h: {:?}", keys.h);
 }
-*/
