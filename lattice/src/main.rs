@@ -52,7 +52,7 @@ impl Polynomial {
     }
 
     /// Shifts a polynomial by a given number of degrees (multiply by x^degree),
-    fn shift(&self, degree: usize) -> Polynomial {
+    fn shift(&self, degree: usize)-> Polynomial{
         // Create a shifted polynomial by appending `degree` zeros
         let mut new_coeffs = vec![0; degree];
         new_coeffs.extend(&self.coefficients);
@@ -79,10 +79,7 @@ impl Polynomial {
         let index=0;
         for index in 0..self_coeffs.len(){
                 new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]).rem_euclid(self.q);
-        }
-        println!("{:?}",&self_coeffs);
-        println!("{:?}",&other_coeffs);
-        println!("{:?}",&new_coeffs);       
+        }    
         let mut newpoly=Polynomial::new(new_coeffs, self.q);
         newpoly.clear_zeros(); 
         newpoly
@@ -91,11 +88,12 @@ impl Polynomial {
 
     //Modulus of the polynomial
     fn mod_phi(&self, phi: &Polynomial) -> Polynomial {
-        return self.clone();
+        let phideg=phi.degree();
+        
     }
     
     
-
+    
     fn to_matrix(&self, phi: &Polynomial) -> Vec<Vec<i32>> {
         let n = phi.degree(); // Degree of φ
         let mut matrix = vec![vec![0; n]; n]; // Initialize an n x n matrix
@@ -115,10 +113,9 @@ impl Polynomial {
                 matrix[i][j] = coeff;
             }
         }
-    
         matrix
     }
-
+    
 
     //Clear the zeros in the coefficient from the highest orders
     //Forexample: 0x^3+x^2-> x^2 since 0x^3 is unnecessary
@@ -130,6 +127,17 @@ impl Polynomial {
             self.coefficients.pop();
         }
     }
+
+    fn multiple(&self, value: i32) -> Polynomial {
+        let new_coeffs: Vec<i32> = self
+            .coefficients
+            .iter()
+            .map(|&coeff| coeff * value)
+            .collect();
+    
+        Polynomial::new(new_coeffs, self.q)
+    }
+    
 
 }
 
@@ -359,9 +367,7 @@ fn main() {
 fn main(){
     let poly1=Polynomial::new(vec![4,0,2,0,1],5);
     println!("{}",&poly1);
-    let poly2=Polynomial::new(vec![2,1,1,0,1],5);
-    println!("{}",&poly2);
-    let poly3=poly1.delete(&poly2);
-    println!("{}",&poly3);
+    let poly2=poly1.multiple(2);
+    println!("{}",&poly2);   
 
 }
