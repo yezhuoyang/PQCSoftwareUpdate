@@ -1,4 +1,32 @@
 use std::ops::{Add, Mul, Rem};
+use sha3::{Shake256, digest::{Update, ExtendableOutput, XofReader}};
+use std::fs::File;
+use std::io::{self, Read};
+
+/// Reads a file in binary mode and returns its SHAKE-256 hash.
+fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Result<String> {
+    // Open the file in binary mode
+    let mut file = File::open(file_path)?;
+
+    // Create a buffer to read the file contents
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+
+    // Create a SHAKE-256 hasher
+    let mut hasher = Shake256::default();
+
+    // Feed the file content into the hasher
+    hasher.update(&buffer);
+
+    // Finalize the hasher and extract the hash output
+    let mut reader = hasher.finalize_xof();
+    let mut hash = vec![0u8; hash_output_size];
+    reader.read_exact(&mut hash)?;
+
+    // Convert the hash output to a hexadecimal string
+    Ok(hash.iter().map(|b| format!("{:02x}", b)).collect())
+}
+
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
@@ -100,6 +128,21 @@ impl NtruKeys {
 
 
 fn main() {
+    let file_path = "C:/Users/73747/Documents/GitHub/PQCSoftwareUpdate/text.bin"; // Replace with your file path
+    let hash_output_size = 64; // Output size in bytes (e.g., 64 for 512-bit hash)
+
+    match hash_file_with_shake256(file_path, hash_output_size) {
+        Ok(hash) => {
+            println!("SHAKE-256 Hash: {}", hash);
+        }
+        Err(e) => {
+            eprintln!("Error hashing file: {}", e);
+        }
+    }
+}
+
+/*
+fn main() {
     // Example: Representing a polynomial as a matrix
     let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
     let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // f = x^2 + 1
@@ -118,3 +161,4 @@ fn main() {
 
     println!("Public key h: {:?}", keys.h);
 }
+*/
