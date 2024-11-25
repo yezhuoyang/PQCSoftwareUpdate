@@ -30,3 +30,33 @@ git config --global gpg.program [PATH_HERE]
 ```
 
 
+# Implementation
+
+Polynomial class: A class representing an integer polynomial
+
+- [ ] Shift
+- [ ] to_matrix
+- [ ] Modular phi
+- [ ] Multiplication
+- [ ] Addition
+- [ ] Minus
+- [ ] Inverse
+
+Hash function with shake256
+
+- [ ] Hash any binary function with shake256
+
+
+NTRU class: A class that store the NTRU publickey and private key
+
+- [ ] Generate f,g by Gaussian sampling
+- [ ] Verify the validity of f,g
+- [ ] Solve for F,G
+- [ ] Calculate h
+- [ ] Generate signature for any file 
+- [ ] Verify signature with public key
+
+
+
+
+
