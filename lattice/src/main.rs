@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{self, Read};
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
-
+use std::fmt;
 
 /// Reads a file in binary mode and returns its SHAKE-256 hash.
 fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Result<String> {
@@ -45,6 +45,7 @@ impl Polynomial {
         Polynomial { coefficients, q }
     }
 
+
     /// Degree of the polynomial
     fn degree(&self) -> usize {
         self.coefficients.len() - 1
@@ -67,7 +68,7 @@ impl Polynomial {
 
     //Modulus of the polynomial
     fn mod_phi(&self, phi: &Polynomial) -> Polynomial {
-
+        return self.clone();
     }
     
     
@@ -95,6 +96,33 @@ impl Polynomial {
         matrix
     }
 }
+
+
+impl fmt::Display for Polynomial{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
+        write!(f,"Polynomial (mod {}): ", self.q)?;
+        let mut first=true;
+        for(i,&coef) in self.coefficients.iter().enumerate().rev(){
+            if coef !=0{
+                if !first {
+                    write!(f, " + ")?;
+                }
+                if i == 0 {
+                    write!(f, "{}", coef)?;
+                } else if i == 1 {
+                    write!(f, "{}x", coef)?;
+                } else {
+                    write!(f, "{}x^{}", coef, i)?;
+                }
+                first = false;               
+            }
+
+        }
+        Ok(())       
+    }
+}
+
+
 
 
 
@@ -191,6 +219,8 @@ fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i32> {
 }
 
 
+
+
 /*
 fn main() {
     let file_path = "C:/Users/73747/Documents/GitHub/PQCSoftwareUpdate/text.bin"; // Replace with your file path
@@ -267,7 +297,7 @@ fn main() {
 }
 */
 
-
+/*
 fn main() {
     let degree = 20; // Degree of the polynomial
     let mean = 0.0; // Mean of the Gaussian distribution
@@ -278,6 +308,7 @@ fn main() {
 
     println!("Generated polynomial coefficients: {:?}", polynomial);
 }
+    */
 
 
 /*
@@ -288,3 +319,8 @@ fn main() {
     let matrix = f.to_matrix(&phi);
 }
 */
+
+fn main(){
+    let poly=Polynomial::new(vec![1,0,2,0,1],5);
+    println!("{}", poly);
+}

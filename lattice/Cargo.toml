@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 rand = "0.8.5"
 sha3 = "0.10"
+rand_distr = "0.4"
