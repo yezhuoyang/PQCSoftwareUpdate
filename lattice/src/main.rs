@@ -52,17 +52,40 @@ impl Polynomial {
     }
 
     /// Shifts a polynomial by a given number of degrees (multiply by x^degree),
-    /// ensuring that the degree does not exceed the modulus φ(x).
-    fn shift(&self, degree: usize, phi: &Polynomial) -> Polynomial {
+    fn shift(&self, degree: usize) -> Polynomial {
         // Create a shifted polynomial by appending `degree` zeros
         let mut new_coeffs = vec![0; degree];
         new_coeffs.extend(&self.coefficients);
 
         // Create a new Polynomial object
         let shifted_poly = Polynomial::new(new_coeffs, self.q);
+        shifted_poly
+    }
 
-        // Reduce the shifted polynomial modulo φ(x)
-        shifted_poly.mod_phi(phi)
+    /// Return a new polynomial, which is self-other
+    fn delete(&self, other: &Polynomial) -> Polynomial{
+        let mut self_coeffs=self.coefficients.clone();
+        let mut other_coeffs=other.coefficients.clone();
+        //Determine which polynomial is longer, append zeros to the shorter one for deletion
+        let gap=self_coeffs.len()  as isize  -other_coeffs.len() as isize;
+        let mut zero_coeffs = vec![0; gap.abs() as usize];
+        if gap>=0{
+             other_coeffs.append(&mut zero_coeffs);
+        }
+        else{
+             self_coeffs.append(&mut zero_coeffs);
+        }
+        let mut new_coeffs = vec![0; self_coeffs.len()];
+        let index=0;
+        for index in 0..self_coeffs.len(){
+                new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]).rem_euclid(self.q);
+        }
+        println!("{:?}",&self_coeffs);
+        println!("{:?}",&other_coeffs);
+        println!("{:?}",&new_coeffs);       
+        let mut newpoly=Polynomial::new(new_coeffs, self.q);
+        newpoly.clear_zeros(); 
+        newpoly
     }
 
 
@@ -79,7 +102,7 @@ impl Polynomial {
     
         for i in 0..n {
             // Pass both the shift degree and the modulus polynomial
-            let shifted_poly = self.shift(i, phi);
+            let shifted_poly = self.shift(i);
             let reduced_poly = shifted_poly.mod_phi(phi);
     
             println!(
@@ -95,6 +118,19 @@ impl Polynomial {
     
         matrix
     }
+
+
+    //Clear the zeros in the coefficient from the highest orders
+    //Forexample: 0x^3+x^2-> x^2 since 0x^3 is unnecessary
+    fn clear_zeros(&mut self){
+        while let Some(&last)=self.coefficients.last(){
+            if last!=0{
+                break;
+            }
+            self.coefficients.pop();
+        }
+    }
+
 }
 
 
@@ -321,6 +357,11 @@ fn main() {
 */
 
 fn main(){
-    let poly=Polynomial::new(vec![1,0,2,0,1],5);
-    println!("{}", poly);
+    let poly1=Polynomial::new(vec![4,0,2,0,1],5);
+    println!("{}",&poly1);
+    let poly2=Polynomial::new(vec![2,1,1,0,1],5);
+    println!("{}",&poly2);
+    let poly3=poly1.delete(&poly2);
+    println!("{}",&poly3);
+
 }
