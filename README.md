@@ -55,9 +55,10 @@ Polynomial class: A class representing an integer polynomial
 - [x] Shift
 - [x] to_matrix
 - [x] Modular phi
-- [ ] Multiplication
-- [ ] Addition
+- [x] Multiplication
+- [x] Addition
 - [x] Minus
+- [ ] Extended GCD
 - [ ] Inverse
 
 Hash function with shake256
