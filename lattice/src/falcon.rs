@@ -32,16 +32,21 @@ fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Resu
 
 
 /// Represents the NTRU lattice keys
-struct NtruKeys {
+pub struct NtruKeys {
     f: Polynomial,
+    F: Polynomial,
     g: Polynomial,
+    G: Polynomial,
+    phi: Polynomial,
     f_inv_mod_q: Polynomial,
     h: Polynomial,
+    A: Vec<Vec<i32>>,
+    B: Vec<Vec<i32>>
 }
 
 impl NtruKeys {
     /// Computes the public key h = g * f^{-1} mod φ mod q
-    fn generate(f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> Self {
+    pub fn generate(f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> Self {
         let f_inv_mod_q = f.clone(); // Placeholder: Implement modular inversion
         let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
 
@@ -52,6 +57,23 @@ impl NtruKeys {
             h,
         }
     }
+
+    // Solve the NTRU equation to get F and G, and get the public key h, secret key
+    pub fn solveNTRU(self, f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> (){
+
+    }
+
+    // Add signature to the message using the secret key
+    pub fn sign(self, message: String) -> String{
+        "22"
+    }
+
+
+    // Verify the signature using the public key
+    pub fn verify(self, message: String, signature: String) -> bool{
+        true
+    }
+
 }
 
 

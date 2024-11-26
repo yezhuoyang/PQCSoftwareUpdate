@@ -137,6 +137,12 @@ impl Polynomial {
             false
         }
     }
+
+    //Calculate the inverse of the polynomial modulo phi
+    pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
+
+
+    }
     
 
 }
