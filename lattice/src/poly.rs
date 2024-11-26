@@ -65,12 +65,14 @@ impl Polynomial {
         }
         let gap=selfdegree-phideg;
         let selfcoeffts=self.coefficients.clone();
-        let selflast = *selfcoeffts.first().unwrap(); // Extract the value and dereference it
+        let selflast = *selfcoeffts.last().unwrap(); // Extract the value and dereference it
         let newpoly=self.delete(&phi.shift(gap).multiple(selflast));
-        println!("Newpoly");
-        println!("{}",newpoly);
-        // newpoly.mod_phi(phi)
-        self.clone()
+        newpoly.mod_phi(phi)
+        //println!("Gap: { }", &phi.shift(gap));
+        //println!("Selflast: { }", &selflast);
+        //println!("{:?}",selfcoeffts);
+        //println!("mod_phi: { }", newpoly);
+        //self.clone()
     }
     
     

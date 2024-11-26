@@ -138,7 +138,7 @@ fn main() {
 
     println!("Generated polynomial coefficients: {:?}", polynomial);
 }
-    */
+*/
 
 
 /*
@@ -151,11 +151,11 @@ fn main() {
 */
 
 fn main(){
-    let poly1=Polynomial::new(vec![4,0,2,0,1],5);
+    let poly1=Polynomial::new(vec![0,0,0,1,0,1],5);
     println!("{}",&poly1);
-    let poly2=Polynomial::new(vec![4,1,2],5);
+    let poly2=Polynomial::new(vec![1,0,0,0,1],5);
     println!("{}",&poly2);   
-    let poly3=poly1.delete(&poly2);
+    let poly3=poly1.mod_phi(&poly2);
 
     println!("{}",&poly3);  
 }
