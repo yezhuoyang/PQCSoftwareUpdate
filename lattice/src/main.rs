@@ -2,7 +2,7 @@
 mod poly; // Declare the module
 use poly::Polynomial; // Bring the `Polynomial` struct into scope
 mod falcon; // Declare the module
-
+use falcon::NtruKeys; // Bring the `NtruKeys` struct into scope
 
 
 
@@ -80,5 +80,7 @@ fn main(){
     let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
     let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
 
-    println!("{ }",(f*G).equal(&(g*F),&phi));
+
+    let mut ntrukeys=NtruKeys::generate_lattice(f,g,F,G,h,phi,12289);
+    println!("{ }",ntrukeys);
 }

@@ -1,8 +1,10 @@
 use crate::poly::Polynomial;
+use std::fmt;
 use std::io::{self, Read};
 use sha3::{Shake256, digest::{Update, ExtendableOutput, XofReader}};
 use std::fs::File;
 use rand::Rng;
+use std::default::Default;
 use rand_distr::{Distribution, Normal};
 
 
@@ -41,7 +43,25 @@ pub struct NtruKeys {
     f_inv_mod_q: Polynomial,
     h: Polynomial,
     A: Vec<Vec<i32>>,
-    B: Vec<Vec<i32>>
+    B: Vec<Vec<i32>>,
+    q: i32
+}
+
+impl Default for NtruKeys {
+    fn default() -> Self {
+        NtruKeys {
+            f: Polynomial::default(),
+            F: Polynomial::default(),
+            g: Polynomial::default(),
+            G: Polynomial::default(),
+            phi: Polynomial::default(),
+            f_inv_mod_q: Polynomial::default(),
+            h: Polynomial::default(),
+            A: vec![],
+            B: vec![],
+            q: 12289
+        }
+    }
 }
 
 impl NtruKeys {
@@ -51,12 +71,33 @@ impl NtruKeys {
         let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
 
         NtruKeys {
-            f,
-            g,
-            f_inv_mod_q,
-            h,
+            f:f,
+            g:g,
+            f_inv_mod_q:f_inv_mod_q,
+            h:h,
+            q:_q,
+            ..Default::default() // Fill in the remaining members with default values
         }
     }
+
+
+    pub fn generate_lattice(f: Polynomial, g: Polynomial, F: Polynomial, G: Polynomial, h:Polynomial,phi: Polynomial,_q: i32) -> Self{
+
+        NtruKeys {
+            f:f,
+            F:F,
+            g:g,
+            G:G,
+            h:h,
+            phi:phi,
+            q:_q,
+            ..Default::default() // Fill in the remaining members with default values
+        }
+
+    }
+
+
+
 
     // Solve the NTRU equation to get F and G, and get the public key h, secret key
     pub fn solveNTRU(self, f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> (){
@@ -64,8 +105,10 @@ impl NtruKeys {
     }
 
     // Add signature to the message using the secret key
+    // The idea is find the shortest vector in the lattice space spanned by A, with the help of the dual 
+    // lattice B.
     pub fn sign(self, message: String) -> String{
-        "22"
+        "22".to_string()
     }
 
 
@@ -74,7 +117,26 @@ impl NtruKeys {
         true
     }
 
+
 }
+
+
+impl fmt::Display for NtruKeys{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
+        write!(f,"NTRUKeys:\n")?;
+        write!(f,"f: {}\n", self.f)?;
+        write!(f,"F: {}\n", self.F)?;
+        write!(f,"g: {}\n", self.g)?;
+        write!(f,"G: {}\n", self.G)?;
+        write!(f,"phi: {}\n", self.phi)?;
+        write!(f,"f_inv_mod_q: {}\n", self.f_inv_mod_q)?;
+        write!(f,"h: {}\n", self.h)?;
+        write!(f,"A: {:?}\n", self.A)?;
+        write!(f,"B: {:?}\n", self.B)?;    
+        Ok(())     
+    }
+}
+
 
 
 

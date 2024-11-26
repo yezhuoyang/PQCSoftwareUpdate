@@ -1,5 +1,7 @@
 use std::fmt;
 use std::ops::{Add, Mul, Sub, Rem};
+use std::default::Default;
+
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
@@ -140,8 +142,7 @@ impl Polynomial {
 
     //Calculate the inverse of the polynomial modulo phi
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
-
-
+        self.clone()
     }
     
 
@@ -231,6 +232,15 @@ impl Sub for Polynomial{
 }
 
 
+
+impl Default for Polynomial {
+    fn default() -> Self {
+        Polynomial {
+            coefficients: vec![],
+            q: 0,
+        }
+    }
+}
 
 
 
