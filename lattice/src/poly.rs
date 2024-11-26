@@ -68,11 +68,6 @@ impl Polynomial {
         let selflast = *selfcoeffts.last().unwrap(); // Extract the value and dereference it
         let newpoly=self.delete(&phi.shift(gap).multiple(selflast));
         newpoly.mod_phi(phi)
-        //println!("Gap: { }", &phi.shift(gap));
-        //println!("Selflast: { }", &selflast);
-        //println!("{:?}",selfcoeffts);
-        //println!("mod_phi: { }", newpoly);
-        //self.clone()
     }
     
     
@@ -90,10 +85,15 @@ impl Polynomial {
                 "x^{} * f = {:?} mod φ = {:?}",
                 i, shifted_poly.coefficients, reduced_poly.coefficients
             );
+
+            println!(
+                "x^{} * f = {} mod φ = {}",
+                i, &shifted_poly, &reduced_poly
+            );
     
             // Fill the row with the reduced coefficients
             for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
-                matrix[i][j] = coeff;
+                matrix[j][i] = coeff;
             }
         }
         matrix
@@ -169,34 +169,6 @@ impl Mul for Polynomial {
 }
 
 
-fn test_polynomial_to_matrix() {
-    // Define the modulus
-    let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
-
-    // Define the polynomial f = x^2 + 1
-    let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
-
-    // Generate the matrix representation of f
-    let matrix = f.to_matrix(&phi);
-
-    // Expected result
-    let expected_matrix = vec![
-        vec![1, 0, 4, 0],
-        vec![0, 1, 0, 4],
-        vec![1, 0, 2, 0],
-        vec![0, 1, 0, 1],
-    ];
-
-    // Print the result
-    println!("Computed matrix:");
-    for row in &matrix {
-        println!("{:?}", row);
-    }
-
-    // Verify correctness
-    assert_eq!(matrix, expected_matrix, "Matrix representation is incorrect");
-}
-
 
 
 #[cfg(test)]
@@ -209,7 +181,7 @@ mod tests {
         let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
 
         // Define the polynomial f = x^2 + 1
-        let f = Polynomial::new(vec![0, 0, 1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
+        let f = Polynomial::new(vec![1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
 
         // Generate the matrix representation of f
         let matrix = f.to_matrix(&phi);
@@ -218,7 +190,7 @@ mod tests {
         let expected_matrix = vec![
             vec![1, 0, 4, 0],
             vec![0, 1, 0, 4],
-            vec![1, 0, 2, 0],
+            vec![1, 0, 1, 0],
             vec![0, 1, 0, 1],
         ];
 
