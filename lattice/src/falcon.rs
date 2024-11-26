@@ -46,7 +46,8 @@ pub struct NtruKeys {
     h: Polynomial,
     A: Vec<Vec<i32>>,
     B: Vec<Vec<i32>>,
-    q: i32
+    q: i32,
+    ndim: usize
 }
 
 impl Default for NtruKeys {
@@ -71,20 +72,21 @@ impl NtruKeys {
     pub fn generate(f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> Self {
         let f_inv_mod_q = f.clone(); // Placeholder: Implement modular inversion
         let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
-
+        let ndim=phi.degree()+1;
         NtruKeys {
             f:f,
             g:g,
             f_inv_mod_q:f_inv_mod_q,
             h:h,
             q:_q,
+            ndim:ndim,
             ..Default::default() // Fill in the remaining members with default values
         }
     }
 
 
     pub fn generate_lattice(f: Polynomial, g: Polynomial, F: Polynomial, G: Polynomial, h:Polynomial,phi: Polynomial,_q: i32) -> Self{
-
+        let ndim=phi.degree()+1;
         NtruKeys {
             f:f,
             F:F,
@@ -93,6 +95,7 @@ impl NtruKeys {
             h:h,
             phi:phi,
             q:_q,
+            ndim:ndim,
             ..Default::default() // Fill in the remaining members with default values
         }
 
@@ -229,4 +232,39 @@ pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i3
     (0..=n)
         .map(|_| normal.sample(&mut rng).round() as i32) // Sample and round to nearest integer
         .collect()
+}
+
+
+//Test the validity of the f and g
+//f should be invertible
+pub fn test_validity_of_fg(f:&Polynomial, g:&Polynomial)->bool{
+
+    true
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*; // Import all items from the parent module
+
+
+    #[test]
+    fn test_key_generation_example1(){
+
+        let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1], 12289); // φ = x^8 + 1
+        let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61],12289); //f
+        let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6],12289); //g
+        let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84],12289); //G
+        let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
+        let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
+    
+        let B=calculate_secret_key(&f,&g,&G,&F,&phi,12289);
+        let A=calculate_public_key(&h,&phi,12289);
+    
+        let result=verify_lattice_orthorgonal(A,B,12289);
+        assert_eq!(result,true);
+    }
+
+
+
 }

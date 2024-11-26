@@ -308,21 +308,4 @@ mod tests {
 
 
 
-    #[test]
-    fn test_multiplication(){
-        let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1], 12289); // φ = x^8 + 1
-        let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61],12289); //f
-        let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6],12289); //g
-        let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84],12289); //G
-        let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
-        let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
-
-
-
-
-
-    }
-
-
-
 }
