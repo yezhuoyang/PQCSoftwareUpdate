@@ -1,5 +1,6 @@
 # PQCSoftwareUpdate
-We study the software update scheme with post quantum signature.
+We study the software update scheme with post quantum signature. 
+The problem is how to make a better system/algorithm design in practice in the era of post quantum so the performance of online application, such as web browser, video games, are not affected, or even better, then pre quantum ear. 
 
 
 
