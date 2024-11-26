@@ -79,8 +79,13 @@ fn main(){
     let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
     let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
 
+    let B=calculate_secret_key(&f,&g,&G,&F,&phi,12289);
+    let A=calculate_public_key(&h,&phi,12289);
 
-    
+
+    let result=verify_lattice_orthorgonal(A,B,12289);
+    println!("{:?}",result);
+/*    
     let amat=f.to_ndarray(&phi);
     println!("{:?}",amat);
 
@@ -109,4 +114,5 @@ fn main(){
     let result=verify_lattice_orthorgonal(Amat,Bmat,5);
 
     println!("{:?}",result);
+*/
 }

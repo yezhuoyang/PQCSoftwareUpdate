@@ -144,16 +144,69 @@ impl fmt::Display for NtruKeys{
 
 /// Verifies that the lattice A is orthogonal to the lattice B.
 pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array2<i32>, q:i32) -> bool{
+    let Amat_shape = Amat.shape();
+    let Bmat_shape = Bmat.shape();
+    if Bmat_shape[1] != Amat_shape[1] {
+        panic!(
+            "Matrix multiplication dimensions mismatch: Bmat is {:?}, Amat is {:?}",
+            Bmat_shape, Amat_shape
+        );
+    }
     let Cmat=Bmat.dot(&Amat.t());
+
+
+
     let C=Cmat.iter().map(|&x| x%q).collect::<Vec<i32>>();
+    println!("{:?}",C);
+
     for i in 0..C.len(){
+        //Every element should be 0
         if C[i]!=0{
             return false;
         }
     }
-    return true;
+    true
 }
 
+
+//Calculate the secret key, which is an ndarray matrix
+pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial,q: i32) -> ndarray::Array2<i32> {
+   let fmat=f.to_ndarray(phi);
+   let gmat=g.to_ndarray(phi);
+   let Gmat=G.to_ndarray(phi);
+   let Fmat=F.to_ndarray(phi);
+   let n=fmat.shape()[0];
+   // Combine four matrices to get [[-gmat,-fmat],[G,-F]]
+   let mut B=Array2::<i32>::zeros((2*n,2*n));
+    for i in 0..n{
+         for j in 0..n{
+              B[[i,j]]=gmat[[i,j]];
+              B[[i,j+n]]=-fmat[[i,j]];
+              B[[i+n,j]]=Gmat[[i,j]];
+              B[[i+n,j+n]]=-Fmat[[i,j]];
+         }
+    }
+    B
+}
+
+pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial, q: i32) -> ndarray::Array2<i32> {
+    let hmat=h.to_ndarray(Phi);
+    let n=hmat.shape()[0];
+    // Construct new matrix [1|hmat], 1 is the identity of n*n matrix
+    let mut A=Array2::<i32>::zeros((n,2*n));
+    for i in 0..n{
+        for j in 0..n{
+            if i==j{
+                A[[i,j]]=1;
+            }
+            else{
+                A[[i,j]]=0;
+            }
+            A[[i,j+n]]=hmat[[j,i]];
+        }
+    }
+    A
+}
 
 
 /// Generates a polynomial with coefficients sampled from a Gaussian distribution.

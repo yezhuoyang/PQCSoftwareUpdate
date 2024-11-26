@@ -89,7 +89,7 @@ impl Polynomial {
             // Pass both the shift degree and the modulus polynomial
             let shifted_poly = self.shift(i);
             let reduced_poly = shifted_poly.mod_phi(phi);
-    
+            /*
             println!(
                 "x^{} * f = {:?} mod φ = {:?}",
                 i, shifted_poly.coefficients, reduced_poly.coefficients
@@ -99,7 +99,7 @@ impl Polynomial {
                 "x^{} * f = {} mod φ = {}",
                 i, &shifted_poly, &reduced_poly
             );
-    
+            */
             // Fill the row with the reduced coefficients
             for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
                 matrix[j][i] = coeff;
@@ -118,7 +118,7 @@ impl Polynomial {
             // Pass both the shift degree and the modulus polynomial
             let shifted_poly = self.shift(i);
             let reduced_poly = shifted_poly.mod_phi(phi);
-    
+            /*
             println!(
                 "x^{} * f = {:?} mod φ = {:?}",
                 i, shifted_poly.coefficients, reduced_poly.coefficients
@@ -128,6 +128,7 @@ impl Polynomial {
                 "x^{} * f = {} mod φ = {}",
                 i, &shifted_poly, &reduced_poly
             );
+            */
             // Fill the row with the reduced coefficients
             for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
                 matrix[[j, i]] = coeff;
