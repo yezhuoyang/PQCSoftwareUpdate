@@ -51,18 +51,18 @@ cargo test
 
 Polynomial class: A class representing an integer polynomial
 
-- [ ] Shift
-- [ ] to_matrix
-- [ ] Modular phi
+- [x] Shift
+- [x] to_matrix
+- [x] Modular phi
 - [ ] Multiplication
 - [ ] Addition
-- [ ] Minus
+- [x] Minus
 - [ ] Inverse
 
 Hash function with shake256
 
-- [ ] Hash any binary function with shake256
-
+- [x] Hash any binary function with shake256
+- [ ] Map a Hashed string to a lattice vector
 
 NTRU class: A class that store the NTRU publickey and private key
 
