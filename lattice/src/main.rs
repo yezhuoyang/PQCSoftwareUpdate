@@ -80,11 +80,18 @@ fn main(){
     let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
 
 
+    
+    let amat=f.to_ndarray(&phi);
+    println!("{:?}",amat);
+
     let mut ntrukeys=NtruKeys::generate_lattice(f,g,F,G,h,phi,12289);
     //println!("{ }",ntrukeys);
 
-   
 
+
+
+
+   
     let A: &[[i32; 4]] = &[
         [1, 1, 0,0],
         [0, 1, 0,3],

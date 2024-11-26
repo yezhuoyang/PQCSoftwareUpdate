@@ -107,6 +107,34 @@ impl Polynomial {
         }
         matrix
     }
+
+
+    
+    pub fn to_ndarray(&self, phi: &Polynomial) -> ndarray::Array2<i32> {
+        let n = phi.degree(); // Degree of φ
+        let mut matrix = ndarray::Array2::<i32>::zeros((n, n)); // Initialize an n x n matrix
+    
+        for i in 0..n {
+            // Pass both the shift degree and the modulus polynomial
+            let shifted_poly = self.shift(i);
+            let reduced_poly = shifted_poly.mod_phi(phi);
+    
+            println!(
+                "x^{} * f = {:?} mod φ = {:?}",
+                i, shifted_poly.coefficients, reduced_poly.coefficients
+            );
+
+            println!(
+                "x^{} * f = {} mod φ = {}",
+                i, &shifted_poly, &reduced_poly
+            );
+            // Fill the row with the reduced coefficients
+            for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
+                matrix[[j, i]] = coeff;
+            }
+        }
+        matrix
+    }    
     
 
     //Clear the zeros in the coefficient from the highest orders
