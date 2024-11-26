@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Mul, Rem};
+use std::ops::{Add, Mul, Sub, Rem};
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
@@ -10,6 +10,8 @@ pub struct Polynomial {
 
 impl Polynomial {
     /// Creates a new polynomial with given coefficients and modulus
+    /// The coefficients are reduced modulo q, i.e., coefficients[i] = coefficients[i] % q
+    /// The coefficients are put in rising order of degrees. For example, [1, 2, 3] represents 1 + 2x + 3x^2
     pub fn new(coefficients: Vec<i32>, q: i32) -> Self {
         let coefficients = coefficients.into_iter().map(|c| c.rem_euclid(q)).collect();
         Polynomial { coefficients, q }
@@ -153,7 +155,7 @@ impl fmt::Display for Polynomial{
 
 
 
-/// Implement multiplication for Polynomial
+//Operator overloading for subtraction, p1*p2
 impl Mul for Polynomial {
     type Output = Polynomial;
 
@@ -167,6 +169,46 @@ impl Mul for Polynomial {
         Polynomial::new(result, self.q)
     }
 }
+
+
+
+//Operator overloading for subtraction, p1+p2
+impl Add for Polynomial{
+    type Output = Polynomial;
+    fn add(self, rhs: Polynomial) -> Polynomial{
+         let selfdegree=self.degree();
+         let rhsdegree=rhs.degree();
+         let newdegree=std::cmp::max(selfdegree,rhsdegree);
+         let mut newcoeffs=vec![0;newdegree+1];
+        for i in 0..newdegree+1{
+            let selfval=self.coefficients.get(i).unwrap_or(&0);
+            let rhsval=rhs.coefficients.get(i).unwrap_or(&0);
+            newcoeffs[i]=(*selfval+*rhsval).rem_euclid(self.q);
+        }
+        Polynomial::new(newcoeffs,self.q)
+    }
+}
+
+
+
+
+//Operator overloading for subtraction, p1-p2
+impl Sub for Polynomial{
+    type Output = Polynomial;
+    fn sub(self, rhs: Polynomial) -> Polynomial{
+         let selfdegree=self.degree();
+         let rhsdegree=rhs.degree();
+         let newdegree=std::cmp::max(selfdegree,rhsdegree);
+         let mut newcoeffs=vec![0;newdegree+1];
+        for i in 0..newdegree+1{
+            let selfval=self.coefficients.get(i).unwrap_or(&0);
+            let rhsval=rhs.coefficients.get(i).unwrap_or(&0);
+            newcoeffs[i]=(*selfval-*rhsval).rem_euclid(self.q);
+        }
+        Polynomial::new(newcoeffs,self.q)
+    }
+}
+
 
 
 
@@ -203,4 +245,24 @@ mod tests {
         // Verify correctness
         assert_eq!(matrix, expected_matrix, "Matrix representation is incorrect");
     }
+
+
+
+    #[test]
+    fn test_multiplication(){
+        let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1], 12289); // φ = x^8 + 1
+        let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61],12289); //f
+        let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6],12289); //g
+        let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84],12289); //G
+        let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
+        let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
+
+
+
+
+
+    }
+
+
+
 }
