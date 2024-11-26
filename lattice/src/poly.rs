@@ -20,7 +20,12 @@ impl Polynomial {
 
     /// Degree of the polynomial
     pub fn degree(&self) -> usize {
-        self.coefficients.len() - 1
+        if self.coefficients.is_empty() {
+           0
+        }
+        else{
+            self.coefficients.len() - 1
+        }
     }
 
     /// Shifts a polynomial by a given number of degrees (multiply by x^degree),
@@ -121,6 +126,16 @@ impl Polynomial {
             .collect();
     
         Polynomial::new(new_coeffs, self.q)
+    }
+
+    pub fn equal(&self, other: &Polynomial, phi: &Polynomial) -> bool {
+        let newpoly=self.clone()-other.clone();
+        if newpoly.mod_phi(phi).degree()==0{
+            true
+        }
+        else{
+            false
+        }
     }
     
 
