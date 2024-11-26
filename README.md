@@ -30,6 +30,23 @@ git config --global gpg.program [PATH_HERE]
 ```
 
 
+# Compile and run tests
+
+The project is a rust implementation of falcon.
+To compile and run the project, execute:
+
+```bash
+cd lattice
+cargo run
+```
+
+To run the tests:
+
+```bash
+cargo test
+```
+
+
 # Implementation
 
 Polynomial class: A class representing an integer polynomial
@@ -55,6 +72,17 @@ NTRU class: A class that store the NTRU publickey and private key
 - [ ] Calculate h
 - [ ] Generate signature for any file 
 - [ ] Verify signature with public key
+
+
+TLS with Falcon
+
+- [ ] TLS protocal
+
+
+Benchmark
+
+- [ ] Benchmark memory
+- [ ] Benchmark time
 
 
 
