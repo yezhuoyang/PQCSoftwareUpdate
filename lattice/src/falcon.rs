@@ -6,6 +6,8 @@ use std::fs::File;
 use rand::Rng;
 use std::default::Default;
 use rand_distr::{Distribution, Normal};
+use ndarray::arr2;
+use ndarray::Array2;
 
 
 /// Reads a file in binary mode and returns its SHAKE-256 hash.
@@ -140,6 +142,20 @@ impl fmt::Display for NtruKeys{
 
 
 
+/// Verifies that the lattice A is orthogonal to the lattice B.
+pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array2<i32>, q:i32) -> bool{
+    let Cmat=Bmat.dot(&Amat.t());
+    let C=Cmat.iter().map(|&x| x%q).collect::<Vec<i32>>();
+    for i in 0..C.len(){
+        if C[i]!=0{
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
 /// Generates a polynomial with coefficients sampled from a Gaussian distribution.
 /// 
 /// # Arguments:
@@ -149,7 +165,7 @@ impl fmt::Display for NtruKeys{
 /// 
 /// # Returns:
 /// - A vector of sampled coefficients.
-fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i32> {
+pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i32> {
     // Create a normal distribution with the specified mean and standard deviation
     let normal = Normal::new(mean, std_dev).unwrap();
 

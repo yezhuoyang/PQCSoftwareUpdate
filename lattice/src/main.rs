@@ -2,10 +2,9 @@
 mod poly; // Declare the module
 use poly::Polynomial; // Bring the `Polynomial` struct into scope
 mod falcon; // Declare the module
-use falcon::NtruKeys; // Bring the `NtruKeys` struct into scope
+use falcon::*; // Import all public items from utils
 
-
-
+use ndarray::arr2;
 /*
 fn main() {
     let file_path = "C:/Users/73747/Documents/GitHub/PQCSoftwareUpdate/text.bin"; // Replace with your file path
@@ -82,5 +81,25 @@ fn main(){
 
 
     let mut ntrukeys=NtruKeys::generate_lattice(f,g,F,G,h,phi,12289);
-    println!("{ }",ntrukeys);
+    //println!("{ }",ntrukeys);
+
+   
+
+    let A: &[[i32; 4]] = &[
+        [1, 1, 0,0],
+        [0, 1, 0,3],
+        [0, 0, 1,2],
+    ];
+    let Amat = arr2(A);
+    let B: &[[i32; 4]] = &[
+        [3, 2, 3, 1],
+        [1, 4, 1, 2],
+        [4, 1, 4, 3],
+        [2, 3, 2, 4],
+    ];
+    let Bmat = arr2(B);
+
+    let result=verify_lattice_orthorgonal(Amat,Bmat,5);
+
+    println!("{:?}",result);
 }
