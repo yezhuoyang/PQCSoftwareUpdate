@@ -1,3 +1,4 @@
 lattice/target/*
 main.exe
 main.pdb
+lattice/Cargo.lock

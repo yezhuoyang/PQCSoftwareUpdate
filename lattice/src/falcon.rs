@@ -1,4 +1,5 @@
 use crate::poly::Polynomial;
+use crate::config::*;
 use std::fmt;
 use std::io::{self, Read};
 use sha3::{Shake256, digest::{Update, ExtendableOutput, XofReader}};
@@ -45,24 +46,22 @@ pub struct NtruKeys {
     f_inv_mod_q: Polynomial,
     h: Polynomial,
     A: Vec<Vec<i32>>,
-    B: Vec<Vec<i32>>,
-    q: i32,
-    ndim: usize
+    B: Vec<Vec<i32>>
 }
 
 
 
 //Calculate the gram schmidt norm of the matrix B
 //We have to ensure that |B|<=1.17q**0.5
-fn GramSchmidtnorm(B:& Vec<Vec<i32>>,q: i32)->f32{
+fn GramSchmidtnorm(B:& Vec<Vec<i32>>)->f32{
     0.0
 }
 
-fn LDL(B:& Vec<Vec<i32>>,q: i32)->Vec<Vec<i32>>{
+fn LDL(B:& Vec<Vec<i32>>)->Vec<Vec<i32>>{
     vec![]
 }
 
-fn ffLDL(B:& Vec<Vec<i32>>,q: i32)->Vec<Vec<i32>>{
+fn ffLDL(B:& Vec<Vec<i32>>)->Vec<Vec<i32>>{
     vec![]
 }
 
@@ -85,33 +84,27 @@ impl Default for NtruKeys {
             f_inv_mod_q: Polynomial::default(),
             h: Polynomial::default(),
             A: vec![],
-            B: vec![],
-            q: 12289,
-            ndim: 10
+            B: vec![]
         }
     }
 }
 
 impl NtruKeys {
     /// Computes the public key h = g * f^{-1} mod φ mod q
-    pub fn generate(f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> Self {
+    pub fn generate(f: Polynomial, g: Polynomial, phi: Polynomial) -> Self {
         let f_inv_mod_q = f.clone(); // Placeholder: Implement modular inversion
         let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
-        let ndim=phi.degree()+1;
         NtruKeys {
             f:f,
             g:g,
             f_inv_mod_q:f_inv_mod_q,
             h:h,
-            q:_q,
-            ndim:ndim,
             ..Default::default() // Fill in the remaining members with default values
         }
     }
 
 
-    pub fn generate_lattice(f: Polynomial, g: Polynomial, F: Polynomial, G: Polynomial, h:Polynomial,phi: Polynomial,_q: i32) -> Self{
-        let ndim=phi.degree()+1;
+    pub fn generate_lattice(f: Polynomial, g: Polynomial, F: Polynomial, G: Polynomial, h:Polynomial,phi: Polynomial) -> Self{
         NtruKeys {
             f:f,
             F:F,
@@ -119,8 +112,6 @@ impl NtruKeys {
             G:G,
             h:h,
             phi:phi,
-            q:_q,
-            ndim:ndim,
             ..Default::default() // Fill in the remaining members with default values
         }
 
@@ -128,24 +119,13 @@ impl NtruKeys {
 
 
     //Generate the NTRU keys
-    pub fn NTRUGen(phi: Polynomial, _q: i32) -> Self {
-        let f_inv_mod_q = f.clone(); // Placeholder: Implement modular inversion
-        let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
-        let ndim=phi.degree()+1;
-        NtruKeys {
-            f:f,
-            g:g,
-            f_inv_mod_q:f_inv_mod_q,
-            h:h,
-            q:_q,
-            ndim:ndim,
-            ..Default::default() // Fill in the remaining members with default values
-        }
+    pub fn NTRUGen(phi: Polynomial) -> () {
+        
     }
 
 
     // Solve the NTRU equation to get F and G, and get the public key h, secret key
-    pub fn NTRUSolve(self, f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> (){
+    pub fn NTRUSolve(self, f: Polynomial, g: Polynomial, phi: Polynomial) -> (){
 
     }
 
@@ -165,7 +145,7 @@ impl NtruKeys {
 
     // Convert the hash of the message to a polynomial
     pub fn HashtoPoint(self, message: &String) -> Polynomial{
-        let k = (1 << 16) / self.q; // 2^16 / q, rounded down (integer division)
+        let k = (1 << 16) / q; // 2^16 / q, rounded down (integer division)
 
         // Create a SHAKE-256 hasher
         let mut hasher = Shake256::default();
@@ -177,10 +157,10 @@ impl NtruKeys {
         let mut reader = hasher.finalize_xof(); // Converts hasher to a SHAKE-256 XOF reader
     
         // Create a vector to store the coefficients with dimension n of the polynomial  
-        let mut coefficients: Vec<i32> = vec![0; self.ndim];
+        let mut coefficients: Vec<i32> = vec![0; ndim];
         
         let mut i = 0;
-        while i < self.ndim {
+        while i < ndim {
             // Extract 16 bits from the reader
             let mut buffer = [0u8; 2];
             reader.read_exact(&mut buffer).expect("Failed to read bytes");
@@ -189,14 +169,14 @@ impl NtruKeys {
             let t = u16::from_le_bytes(buffer) as i32;
     
             // Filter values based on the condition
-            if t < k * self.q {
+            if t < k * q {
                 coefficients[i] = t;
                 i += 1;
             }
         }
     
         // Create a polynomial with the extracted coefficients
-        let p = Polynomial::new(coefficients, self.q);
+        let p = Polynomial::new(coefficients);
         println!("{}", p);
         p
     }
@@ -245,7 +225,7 @@ impl fmt::Display for NtruKeys{
 
 
 /// Verifies that the lattice A is orthogonal to the lattice B.
-pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array2<i32>, q:i32) -> bool{
+pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array2<i32>) -> bool{
     let Amat_shape = Amat.shape();
     let Bmat_shape = Bmat.shape();
     if Bmat_shape[1] != Amat_shape[1] {
@@ -272,39 +252,37 @@ pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array
 
 
 //Calculate the secret key, which is an ndarray matrix
-pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial,q: i32) -> ndarray::Array2<i32> {
+pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial) -> ndarray::Array2<i32> {
    let fmat=f.to_ndarray(phi);
    let gmat=g.to_ndarray(phi);
    let Gmat=G.to_ndarray(phi);
    let Fmat=F.to_ndarray(phi);
-   let n=fmat.shape()[0];
    // Combine four matrices to get [[-gmat,-fmat],[G,-F]]
-   let mut B=Array2::<i32>::zeros((2*n,2*n));
-    for i in 0..n{
-         for j in 0..n{
+   let mut B=Array2::<i32>::zeros((2*ndim,2*ndim));
+    for i in 0..ndim{
+         for j in 0..ndim{
               B[[i,j]]=gmat[[i,j]];
-              B[[i,j+n]]=-fmat[[i,j]];
-              B[[i+n,j]]=Gmat[[i,j]];
-              B[[i+n,j+n]]=-Fmat[[i,j]];
+              B[[i,j+ndim]]=-fmat[[i,j]];
+              B[[i+ndim,j]]=Gmat[[i,j]];
+              B[[i+ndim,j+ndim]]=-Fmat[[i,j]];
          }
     }
     B
 }
 
-pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial, q: i32) -> ndarray::Array2<i32> {
+pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial) -> ndarray::Array2<i32> {
     let hmat=h.to_ndarray(Phi);
-    let n=hmat.shape()[0];
     // Construct new matrix [1|hmat], 1 is the identity of n*n matrix
-    let mut A=Array2::<i32>::zeros((n,2*n));
-    for i in 0..n{
-        for j in 0..n{
+    let mut A=Array2::<i32>::zeros((ndim,2*ndim));
+    for i in 0..ndim{
+        for j in 0..ndim{
             if i==j{
                 A[[i,j]]=1;
             }
             else{
                 A[[i,j]]=0;
             }
-            A[[i,j+n]]=hmat[[j,i]];
+            A[[i,j+ndim]]=hmat[[j,i]];
         }
     }
     A
@@ -350,17 +328,17 @@ mod tests {
     #[test]
     fn test_key_generation_example1(){
 
-        let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1], 12289); // φ = x^8 + 1
-        let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61],12289); //f
-        let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6],12289); //g
-        let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84],12289); //G
-        let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32],12289); //G
-        let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568],12289); //h
+        let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
+        let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
+        let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
+        let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84]); //G
+        let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32]); //G
+        let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
     
-        let B=calculate_secret_key(&f,&g,&G,&F,&phi,12289);
-        let A=calculate_public_key(&h,&phi,12289);
+        let B=calculate_secret_key(&f,&g,&G,&F,&phi);
+        let A=calculate_public_key(&h,&phi);
     
-        let result=verify_lattice_orthorgonal(A,B,12289);
+        let result=verify_lattice_orthorgonal(A,B);
         assert_eq!(result,true);
     }
 

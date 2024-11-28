@@ -1,22 +1,27 @@
 use std::fmt;
 use std::ops::{Add, Mul, Sub, Rem};
 use std::default::Default;
+use std::f64::consts::PI;
+use crate::config::*;
+
+
+
+
 
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
 pub struct Polynomial {
     coefficients: Vec<i32>, // Coefficients of the polynomial
-    q: i32,                // Modulus
 }
 
 impl Polynomial {
     /// Creates a new polynomial with given coefficients and modulus
     /// The coefficients are reduced modulo q, i.e., coefficients[i] = coefficients[i] % q
     /// The coefficients are put in rising order of degrees. For example, [1, 2, 3] represents 1 + 2x + 3x^2
-    pub fn new(coefficients: Vec<i32>, q: i32) -> Self {
+    pub fn new(coefficients: Vec<i32>) -> Self {
         let coefficients = coefficients.into_iter().map(|c| c.rem_euclid(q)).collect();
-        Polynomial { coefficients, q }
+        Polynomial { coefficients}
     }
 
 
@@ -37,7 +42,7 @@ impl Polynomial {
         new_coeffs.extend(&self.coefficients);
 
         // Create a new Polynomial object
-        let shifted_poly = Polynomial::new(new_coeffs, self.q);
+        let shifted_poly = Polynomial::new(new_coeffs);
         shifted_poly
     }
 
@@ -57,9 +62,9 @@ impl Polynomial {
         let mut new_coeffs = vec![0; self_coeffs.len()];
         let index=0;
         for index in 0..self_coeffs.len(){
-                new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]).rem_euclid(self.q);
+                new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]).rem_euclid(q);
         }    
-        let mut newpoly=Polynomial::new(new_coeffs, self.q);
+        let mut newpoly=Polynomial::new(new_coeffs);
         newpoly.clear_zeros(); 
         newpoly
     }
@@ -156,7 +161,7 @@ impl Polynomial {
             .map(|&coeff| coeff * value)
             .collect();
     
-        Polynomial::new(new_coeffs, self.q)
+        Polynomial::new(new_coeffs)
     }
 
     pub fn equal(&self, other: &Polynomial, phi: &Polynomial) -> bool {
@@ -180,7 +185,7 @@ impl Polynomial {
 
 impl fmt::Display for Polynomial{
     fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
-        write!(f,"Polynomial (mod {}): ", self.q)?;
+        write!(f,"Polynomial (mod {}): ", q)?;
         let mut first=true;
         for(i,&coef) in self.coefficients.iter().enumerate().rev(){
             if coef !=0{
@@ -214,10 +219,10 @@ impl Mul for Polynomial {
         let mut result = vec![0; self.coefficients.len() + rhs.coefficients.len() - 1];
         for (i, &a) in self.coefficients.iter().enumerate() {
             for (j, &b) in rhs.coefficients.iter().enumerate() {
-                result[i + j] = (result[i + j] + a * b).rem_euclid(self.q);
+                result[i + j] = (result[i + j] + a * b).rem_euclid(q);
             }
         }
-        Polynomial::new(result, self.q)
+        Polynomial::new(result)
     }
 }
 
@@ -234,9 +239,9 @@ impl Add for Polynomial{
         for i in 0..newdegree+1{
             let selfval=self.coefficients.get(i).unwrap_or(&0);
             let rhsval=rhs.coefficients.get(i).unwrap_or(&0);
-            newcoeffs[i]=(*selfval+*rhsval).rem_euclid(self.q);
+            newcoeffs[i]=(*selfval+*rhsval).rem_euclid(q);
         }
-        Polynomial::new(newcoeffs,self.q)
+        Polynomial::new(newcoeffs)
     }
 }
 
@@ -254,9 +259,9 @@ impl Sub for Polynomial{
         for i in 0..newdegree+1{
             let selfval=self.coefficients.get(i).unwrap_or(&0);
             let rhsval=rhs.coefficients.get(i).unwrap_or(&0);
-            newcoeffs[i]=(*selfval-*rhsval).rem_euclid(self.q);
+            newcoeffs[i]=(*selfval-*rhsval).rem_euclid(q);
         }
-        Polynomial::new(newcoeffs,self.q)
+        Polynomial::new(newcoeffs)
     }
 }
 
@@ -265,8 +270,7 @@ impl Sub for Polynomial{
 impl Default for Polynomial {
     fn default() -> Self {
         Polynomial {
-            coefficients: vec![],
-            q: 0,
+            coefficients: vec![]
         }
     }
 }
@@ -283,6 +287,23 @@ pub fn decompress(compressed: &String)-> Polynomial{
     let mut decompressed=Polynomial::default();
     decompressed
 }
+
+
+
+//Calculate all the unit roots of a given order n
+//The equation is x^n=1
+pub fn calculate_unit_roots(n: &i32) -> Vec<(f64, f64)> {
+    let n_as_f64 = *n as f64; // Convert the value of n to f64
+    (0..*n) // Use n directly here as an integer
+        .map(|k| {
+            let angle = 2.0 * PI * k as f64 / n_as_f64; // Calculate the angle
+            (angle.cos(), angle.sin()) // Return (cos(angle), sin(angle)) as a tuple
+        })
+        .collect() // Collect the results into a vector
+}
+
+
+
 
 
 //The FFT representation of a polynomial modulo phi, which is a vector of complex numbers, stored as a vector of f64
@@ -308,10 +329,10 @@ mod tests {
     #[test]
     fn test_polynomial_to_matrix() {
         // Define the modulus
-        let phi = Polynomial::new(vec![1, 0, 0, 0, 1], 5); // φ = x^4 + 1
+        let phi = Polynomial::new(vec![1, 0, 0, 0, 1]); // φ = x^4 + 1
 
         // Define the polynomial f = x^2 + 1
-        let f = Polynomial::new(vec![1, 0, 1], 5); // Coefficients: [0, 0, 1, 0, 1]
+        let f = Polynomial::new(vec![1, 0, 1]); // Coefficients: [0, 0, 1, 0, 1]
 
         // Generate the matrix representation of f
         let matrix = f.to_matrix(&phi);
