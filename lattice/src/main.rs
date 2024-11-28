@@ -1,13 +1,13 @@
 
 mod poly; // Declare the module
-use poly::Polynomial; // Bring the `Polynomial` struct into scope
+use poly::*; // Bring the `Polynomial` struct into scope
 mod falcon; // Declare the module
 use falcon::*; // Import all public items from utils
 use ndarray::arr2;
 
 mod config;
 use config::*; // Import all constants into the local scope
-
+use num::complex::Complex;
 
 /*
 fn main() {
@@ -75,48 +75,17 @@ fn main() {
 */
 
 fn main(){
+    let pairvec=calculate_unit_roots(&8);
+    let phi = Polynomial::new(vec![1, 0, 0, 0, 0, 0, 0, 0, 1]); // φ = x^8 + 1
+    for pair in pairvec{
+        let newcomplex=Complex::new(pair.0,pair.1);
+        let V=phi.calculate_value_complex(newcomplex);
+        println!("{:?}",V);
+    }
 
-    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
-    let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
-    let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
-    let F=Polynomial::new(vec![58,20,17,-64,-3,-9,-21,-84]); //G
-    let G=Polynomial::new(vec![-41,-34,-33,25,-41,31,-18,-32]); //G
-    let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
-
-    let B=calculate_secret_key(&f,&g,&G,&F,&phi);
-    let A=calculate_public_key(&h,&phi);
-
-
-    let result=verify_lattice_orthorgonal(A,B);
-    println!("{:?}",result);
-    
-    let amat=f.to_ndarray(&phi);
-    println!("{:?}",amat);
-
-    let mut ntrukeys=NtruKeys::generate_lattice(f,g,F,G,h,phi);
-    //println!("{ }",ntrukeys);
-
-    let poly=ntrukeys.HashtoPoint(&"Helloworld".to_string());
-/*
+    //
+    //println!("{:?}",pair);
 
 
-   
-    let A: &[[i32; 4]] = &[
-        [1, 1, 0,0],
-        [0, 1, 0,3],
-        [0, 0, 1,2],
-    ];
-    let Amat = arr2(A);
-    let B: &[[i32; 4]] = &[
-        [3, 2, 3, 1],
-        [1, 4, 1, 2],
-        [4, 1, 4, 3],
-        [2, 3, 2, 4],
-    ];
-    let Bmat = arr2(B);
 
-    let result=verify_lattice_orthorgonal(Amat,Bmat,5);
-
-    println!("{:?}",result);
-*/
 }

@@ -4,7 +4,7 @@ use std::default::Default;
 use std::f64::consts::PI;
 use crate::config::*;
 
-
+use num::complex::Complex;
 
 
 
@@ -177,6 +177,33 @@ impl Polynomial {
     //Calculate the inverse of the polynomial modulo phi
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
         self.clone()
+    }
+
+    //Calculate the value of the polynomial at a given point x
+    pub fn calculate_value_int(&self, x: i32) -> i32 {
+        let mut result = 0;
+        for (i, &coeff) in self.coefficients.iter().enumerate() {
+            result += coeff * x.pow(i as u32);
+        }
+        result.rem_euclid(q)
+    }
+
+    //Calculate the value of the polynomial of a floating point value x
+    pub fn calculate_value_float(&self, x:f64)-> f64{
+        let mut result=0.0;
+        for (i,&coeff) in self.coefficients.iter().enumerate(){
+            result+=coeff as f64*x.powi(i as i32);
+        }
+        result
+    }
+
+    //Calculate the value of the polynomial of complex value a+bi
+    pub fn calculate_value_complex(&self, x: Complex<f64>) -> Complex<f64> {
+        let mut result = Complex::new(0.0, 0.0);
+        for (i, &coeff) in self.coefficients.iter().enumerate() {
+            result += Complex::new(coeff as f64, 0.0) * x.powf(i as f64);
+        }
+        result
     }
 
 
