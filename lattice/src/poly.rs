@@ -338,10 +338,19 @@ pub fn FFT(poly: &Polynomial, phi: &Polynomial)-> Vec<f64>{
     let unit_roots=calculate_unit_roots(&(phideg as i32));
     for i in 0..phideg{
         let root=unit_roots[i];
-        let tmpcomplex=Complex::new(root.0,root.1);
-        fft[i]=tmpcomplex.re;
-        fft[i+phideg]=tmpcomplex.im;
+        let mut sum=Complex::new(0.0,0.0);
+        let xi=Complex::new(root.0,root.1);
+        for j in 0..phideg{
+            if j>=poly.coefficients.len(){
+                break;
+            }
+            let aj=Complex::new(poly.coefficients[j] as f64,0.0);
+            sum+=aj*xi.powf(j as f64);
+        }
+        fft[i]=sum.re;
+        fft[i+phideg]=sum.im;
     }
+    println!("{:?}",fft.len());
     fft
 }
 
@@ -359,12 +368,30 @@ fn vandermonde_matrix(input: &[f64], n: usize) -> Array2<Complex<f64>> {
 }
 
 
-/*
+//Use the input fft vector to calculate the polynomial coefficients
 pub fn inverseFFT(phi: &Polynomial, fft: &Vec<f64>)->Polynomial{
-
-    Polynomial::new(poly)
+    let phideg=phi.degree();
+    let mut coefficients=vec![0 as i32;phideg];
+    let unit_roots=calculate_unit_roots(&(phideg as i32));
+    for i in 0..phideg{
+        let mut sum=Complex::new(0.0,0.0);
+        for j in 0..phideg{
+            //xj in the van der monde matrix
+            //yi in the fft representation
+            let tmpcomplex=Complex::new(fft[j],fft[j+phideg]);
+            let root=Complex::new(unit_roots[j].0,unit_roots[j].1);
+            sum+=tmpcomplex*root.powf(-(i as f64));
+        }
+        if phideg>1{
+            coefficients[i]=(sum.re as i32 /(phideg as i32 -1)) as i32;
+        }
+        else{
+            coefficients[i]=sum.re as i32;
+        }
+    }
+    Polynomial::new(coefficients)
 }
-*/
+
 
 
 //The NTT representation of a polynomial modulo phi
