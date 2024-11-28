@@ -173,7 +173,7 @@ impl Polynomial {
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
         self.clone()
     }
-    
+
 
 }
 
@@ -269,6 +269,34 @@ impl Default for Polynomial {
             q: 0,
         }
     }
+}
+
+
+//Compress the polynomial to a string
+pub fn compress(poly: &Polynomial) -> String{
+    let mut compressed=String::new();
+    compressed
+}
+
+//Decompress the polynomial from a string
+pub fn decompress(compressed: &String)-> Polynomial{
+    let mut decompressed=Polynomial::default();
+    decompressed
+}
+
+
+//The FFT representation of a polynomial modulo phi, which is a vector of complex numbers, stored as a vector of f64
+pub fn FFT(poly: &Polynomial, phi: &Polynomial)-> Vec<f64>{
+    let n=phi.degree();
+    let mut fft=vec![0.0;2*n];
+    fft
+}
+
+//The NTT representation of a polynomial modulo phi
+pub fn NTT(poly: &Polynomial, phi: &Polynomial)-> Vec<i32>{
+    let n=phi.degree();
+    let mut ntt=vec![0;2*n];
+    ntt
 }
 
 

@@ -50,6 +50,30 @@ pub struct NtruKeys {
     ndim: usize
 }
 
+
+
+//Calculate the gram schmidt norm of the matrix B
+//We have to ensure that |B|<=1.17q**0.5
+fn GramSchmidtnorm(B:& Vec<Vec<i32>>,q: i32)->f32{
+    0.0
+}
+
+fn LDL(B:& Vec<Vec<i32>>,q: i32)->Vec<Vec<i32>>{
+    vec![]
+}
+
+fn ffLDL(B:& Vec<Vec<i32>>,q: i32)->Vec<Vec<i32>>{
+    vec![]
+}
+
+
+pub struct FalconTree{
+
+}
+
+
+
+
 impl Default for NtruKeys {
     fn default() -> Self {
         NtruKeys {
@@ -103,17 +127,32 @@ impl NtruKeys {
     }
 
 
+    //Generate the NTRU keys
+    pub fn NTRUGen(phi: Polynomial, _q: i32) -> Self {
+        let f_inv_mod_q = f.clone(); // Placeholder: Implement modular inversion
+        let h = (g.clone() * f_inv_mod_q.clone()).mod_phi(&phi); // Clone `g` and `f_inv_mod_q`
+        let ndim=phi.degree()+1;
+        NtruKeys {
+            f:f,
+            g:g,
+            f_inv_mod_q:f_inv_mod_q,
+            h:h,
+            q:_q,
+            ndim:ndim,
+            ..Default::default() // Fill in the remaining members with default values
+        }
+    }
 
 
     // Solve the NTRU equation to get F and G, and get the public key h, secret key
-    pub fn solveNTRU(self, f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> (){
+    pub fn NTRUSolve(self, f: Polynomial, g: Polynomial, phi: Polynomial, _q: i32) -> (){
 
     }
 
-    // Add signature to the message using the secret key
+    // Add signature to the message using the secret key, bounded by beta
     // The idea is find the shortest vector in the lattice space spanned by A, with the help of the dual 
     // lattice B.
-    pub fn sign(self, message: String) -> String{
+    pub fn sign(self, message: String, beta: i32) -> String{
         "22".to_string()
     }
 
@@ -161,6 +200,26 @@ impl NtruKeys {
         println!("{}", p);
         p
     }
+
+
+    //Fast Fourier Sampling
+    pub fn ffSampling(self, beta: i32) -> Polynomial{
+        self.f.clone()
+    }
+
+    pub fn SamplerZ(self, beta: i32) -> Polynomial{
+        self.f.clone()
+    }
+
+    pub fn splitfft(self, beta: i32) -> Polynomial{
+        self.f.clone()
+    }
+
+
+    pub fn mergefft(self, beta: i32) -> Polynomial{
+        self.f.clone()
+    }
+
 
 
 }
