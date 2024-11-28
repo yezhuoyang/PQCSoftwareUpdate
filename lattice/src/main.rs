@@ -77,15 +77,10 @@ fn main() {
 fn main(){
     let pairvec=calculate_unit_roots(&8);
     let phi = Polynomial::new(vec![1, 0, 0, 0, 0, 0, 0, 0, 1]); // φ = x^8 + 1
-    for pair in pairvec{
-        let newcomplex=Complex::new(pair.0,pair.1);
-        let V=phi.calculate_value_complex(newcomplex);
-        println!("{:?}",V);
-    }
-
-    //
-    //println!("{:?}",pair);
-
+    let poly=Polynomial::new(vec![-55,11,-23,-23,47,16,13]); //f
+    
+    let  K=FFT(&poly, &phi);
+    println!("{:?}",K);
 
 
 }

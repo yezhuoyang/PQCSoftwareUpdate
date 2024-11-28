@@ -3,9 +3,8 @@ use std::ops::{Add, Mul, Sub, Rem};
 use std::default::Default;
 use std::f64::consts::PI;
 use crate::config::*;
-
+use ndarray::Array2;
 use num::complex::Complex;
-
 
 
 
@@ -331,14 +330,42 @@ pub fn calculate_unit_roots(n: &i32) -> Vec<(f64, f64)> {
 
 
 
-
-
 //The FFT representation of a polynomial modulo phi, which is a vector of complex numbers, stored as a vector of f64
 pub fn FFT(poly: &Polynomial, phi: &Polynomial)-> Vec<f64>{
-    let n=phi.degree();
-    let mut fft=vec![0.0;2*n];
+    let phideg=phi.degree();
+    //Store the complex numbers as a vector of f64
+    let mut fft=vec![0.0;2*phideg];
+    let unit_roots=calculate_unit_roots(&(phideg as i32));
+    for i in 0..phideg{
+        let root=unit_roots[i];
+        let tmpcomplex=Complex::new(root.0,root.1);
+        fft[i]=tmpcomplex.re;
+        fft[i+phideg]=tmpcomplex.im;
+    }
     fft
 }
+
+
+//Create a Vandermonde matrix from a given input vector
+fn vandermonde_matrix(input: &[f64], n: usize) -> Array2<Complex<f64>> {
+    let mut matrix = Array2::<Complex<f64>>::zeros((n, n));
+    for i in 0..n{
+        let root=Complex::new(input[i],input[i+n]);
+        for j in 0..n{
+            matrix[[i,j]]=root.powf(j as f64);
+        }
+    }
+    matrix
+}
+
+
+/*
+pub fn inverseFFT(phi: &Polynomial, fft: &Vec<f64>)->Polynomial{
+
+    Polynomial::new(poly)
+}
+*/
+
 
 //The NTT representation of a polynomial modulo phi
 pub fn NTT(poly: &Polynomial, phi: &Polynomial)-> Vec<i32>{
