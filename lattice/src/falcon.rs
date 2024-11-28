@@ -62,7 +62,8 @@ impl Default for NtruKeys {
             h: Polynomial::default(),
             A: vec![],
             B: vec![],
-            q: 12289
+            q: 12289,
+            ndim: 10
         }
     }
 }
@@ -120,6 +121,45 @@ impl NtruKeys {
     // Verify the signature using the public key
     pub fn verify(self, message: String, signature: String) -> bool{
         true
+    }
+
+
+    // Convert the hash of the message to a polynomial
+    pub fn HashtoPoint(self, message: &String) -> Polynomial{
+        let k = (1 << 16) / self.q; // 2^16 / q, rounded down (integer division)
+
+        // Create a SHAKE-256 hasher
+        let mut hasher = Shake256::default();
+    
+        // Feed the string content into the hasher
+        hasher.update(message.as_bytes());
+    
+        // Obtain a reader for extracting pseudo-random bytes
+        let mut reader = hasher.finalize_xof(); // Converts hasher to a SHAKE-256 XOF reader
+    
+        // Create a vector to store the coefficients with dimension n of the polynomial  
+        let mut coefficients: Vec<i32> = vec![0; self.ndim];
+        
+        let mut i = 0;
+        while i < self.ndim {
+            // Extract 16 bits from the reader
+            let mut buffer = [0u8; 2];
+            reader.read_exact(&mut buffer).expect("Failed to read bytes");
+    
+            // Combine two bytes into a 16-bit integer
+            let t = u16::from_le_bytes(buffer) as i32;
+    
+            // Filter values based on the condition
+            if t < k * self.q {
+                coefficients[i] = t;
+                i += 1;
+            }
+        }
+    
+        // Create a polynomial with the extracted coefficients
+        let p = Polynomial::new(coefficients, self.q);
+        println!("{}", p);
+        p
     }
 
 

@@ -85,15 +85,15 @@ fn main(){
 
     let result=verify_lattice_orthorgonal(A,B,12289);
     println!("{:?}",result);
-/*    
+    
     let amat=f.to_ndarray(&phi);
     println!("{:?}",amat);
 
     let mut ntrukeys=NtruKeys::generate_lattice(f,g,F,G,h,phi,12289);
     //println!("{ }",ntrukeys);
 
-
-
+    let poly=ntrukeys.HashtoPoint(&"Helloworld".to_string());
+/*
 
 
    
