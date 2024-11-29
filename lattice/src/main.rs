@@ -132,7 +132,7 @@ fn main() {
 }
 */
 
-
+/*
 fn main() {
     // Example: Representing a polynomial as a matrix
     let phi = Polynomial::new(vec![1, 0, 0, 0, 0 ,0 ,0 , 1]); // φ = x^8 + 1
@@ -143,4 +143,15 @@ fn main() {
 
     let polyinverse=inverseFFT(&phi,&fft);
     println!("The Inverse FFT of the polynomial is {}",polyinverse);
+}
+*/
+
+fn main() {
+    let f = Polynomial::new(vec![3, 6, 9]); // 3 + 6x + 9x^2
+    let g = Polynomial::new(vec![1, 2]);    // 1 + 2x
+
+    let (a, b, gcd) = extended_gcd(&f, &g);
+    println!("a: {:?}", a);
+    println!("b: {:?}", b);
+    println!("gcd: {:?}", gcd);
 }

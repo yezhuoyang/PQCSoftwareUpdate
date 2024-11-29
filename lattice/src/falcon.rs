@@ -120,7 +120,7 @@ impl NtruKeys {
 
     //Generate the NTRU keys
     pub fn NTRUGen(phi: Polynomial) -> () {
-        
+        let sigma=1.17*(q/(2*phi.degree()))**0.5;
     }
 
 
@@ -187,8 +187,27 @@ impl NtruKeys {
         self.f.clone()
     }
 
-    pub fn SamplerZ(self, beta: i32) -> Polynomial{
-        self.f.clone()
+
+    pub fn BaseSampler(self) -> i32{
+        0
+    }
+
+    //An approximation of 2^{63}*ccs*e^{-x}
+    pub fn ApproxExp(x:f64,ccs:f64) -> f64{
+        0.0
+    }
+
+    //Return a single bit, which equals 1 with probability ccs*e^{-x}
+    pub fn BerExp(x:f64,ccs:f64) -> i32{
+        0
+    }
+
+    
+
+    pub fn SamplerZ(self, mu: f64,sigma: f64) -> i32{
+        let r=mu - mu.floor();
+        let ccs=sigmamin/sigma;
+        while
     }
 
     pub fn splitfft(self, beta: i32) -> Polynomial{

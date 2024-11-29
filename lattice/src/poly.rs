@@ -209,6 +209,46 @@ impl Polynomial {
 }
 
 
+//return gcd(f,g)
+// af+bg=gcd(f,g), return a,b,gcd(f,g)
+pub fn extended_gcd(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
+    let mut old_r = f.clone();
+    let mut r = g.clone();
+    let mut old_a = Polynomial::new(vec![1]); // a_0 = 1
+    let mut a = Polynomial::new(vec![0]);     // a_1 = 0
+    let mut old_b = Polynomial::new(vec![0]); // b_0 = 0
+    let mut b = Polynomial::new(vec![1]);     // b_1 = 1
+
+    while r.degree() > 0 || !r.coefficients.iter().all(|&x| x == 0) {
+        // Quotient q = old_r / r
+        let mut quotient = Polynomial::new(vec![0]);
+        if r.degree() > 0 {
+            let leading_coeff_r = *r.coefficients.last().unwrap();
+            let leading_coeff_old_r = *old_r.coefficients.last().unwrap();
+            quotient = old_r.delete(&(r.multiple(leading_coeff_old_r / leading_coeff_r)));
+        }
+
+        // Remainder r = old_r - q * r
+        let temp_r = r.clone();
+        r = old_r.delete(&quotient.shift(temp_r.degree()));
+        old_r = temp_r;
+
+        // Update a and b
+        let temp_a = a.clone();
+        a = old_a.delete(&quotient.shift(temp_a.degree()));
+        old_a = temp_a;
+
+        let temp_b = b.clone();
+        b = old_b.delete(&quotient.shift(temp_b.degree()));
+        old_b = temp_b;
+    }
+
+    // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
+    (old_a, old_b, old_r)
+}
+
+
+
 impl fmt::Display for Polynomial{
     fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
         write!(f,"Polynomial (mod {}): ", q)?;
@@ -232,7 +272,6 @@ impl fmt::Display for Polynomial{
         Ok(())       
     }
 }
-
 
 
 
@@ -312,6 +351,12 @@ pub fn compress(poly: &Polynomial) -> String{
 pub fn decompress(compressed: &String)-> Polynomial{
     let mut decompressed=Polynomial::default();
     decompressed
+}
+
+
+//We will use fieldnorm to NTRU equation onto a smaller ring
+pub fn fieldnorm(poly: &Polynomial) -> Polynomial {
+    Polynomial::new(poly.coefficients.clone())
 }
 
 
