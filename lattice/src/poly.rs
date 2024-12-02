@@ -123,6 +123,17 @@ impl Polynomial {
         }
     }
 
+    pub fn leading_coeff(&self) -> i64 {
+        let mut tmp=self.clone();
+        tmp.clear_zeros();
+        if tmp.coefficients.is_empty() {
+            0
+        }
+        else{
+            *tmp.coefficients.last().unwrap()
+        }
+    }
+
     /// Shifts a polynomial by a given number of degrees (multiply by x^degree),
     pub fn shift(&self, degree: usize)-> Polynomial{
         // Create a shifted polynomial by appending `degree` zeros
@@ -255,6 +266,8 @@ impl Polynomial {
     }
 
     //Calculate the inverse of the polynomial modulo phi
+    //Here we use extended GCD algorithm to calculate the inverse
+    //The inverse of f is g such that f*g=1 mod phi
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
         self.clone()
     }
@@ -305,54 +318,49 @@ impl Polynomial {
 
 
 //return gcd(f,g)
-// af+bg=gcd(f,g), return a,b,gcd(f,g)
-pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
+// af+bg=gcd(f,g) mod phi, return a,b,gcd(f,g)
+pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
     let mut old_r = f.clone();
     let mut r = g.clone();
     let mut old_a = Polynomial::new(vec![1]); // a_0 = 1
     let mut a = Polynomial::new(vec![0]);     // a_1 = 0
     let mut old_b = Polynomial::new(vec![0]); // b_0 = 0
     let mut b = Polynomial::new(vec![1]);     // b_1 = 1
+    /*
+    while r.degree() > 0{
 
-    while r.degree() > 0 || !r.coefficients.iter().all(|&x| x == 0) {
-        // Quotient q = old_r / r
-        let mut quotient = Polynomial::new(vec![0]);
-        if r.degree() > 0 {
-            let leading_coeff_r = *r.coefficients.last().unwrap();
-            let leading_coeff_old_r = *old_r.coefficients.last().unwrap();
-            quotient = old_r.delete(&(r.multiple(leading_coeff_old_r / leading_coeff_r)));
-        }
-
-        // Remainder r = old_r - q * r
-        let temp_r = r.clone();
-        r = old_r.delete(&quotient.shift(temp_r.degree()));
-        old_r = temp_r;
-
-        // Update a and b
-        let temp_a = a.clone();
-        a = old_a.delete(&quotient.shift(temp_a.degree()));
-        old_a = temp_a;
-
-        let temp_b = b.clone();
-        b = old_b.delete(&quotient.shift(temp_b.degree()));
-        old_b = temp_b;
     }
-
+    */
     // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
     (old_a, old_b, old_r)
 }
+
+
+pub fn extended_gcd_poly_example(){
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+    let f = Polynomial::new(vec![1, 2, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    let (a, b, gcd) = extended_gcd_poly(&f, &g, &phi);
+    let result = a.clone() * f.clone() + b.clone() * g.clone();
+    assert!(result.equal(&gcd, &phi), "GCD is incorrect");
+    println!("GCD of {:?} and {:?}: {:?}, a = {:?}, b = {:?}", f, g, gcd, a, b);
+}
+
+
+
+
 
 //Test the extended gcd algorithm of polynomial
 pub fn extended_gcd_poly_test() {
     // Test the extended GCD algorithm for polynomials
     // Randomly generated two polynomials for 100 times
-    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
     for _ in 0..100 {
         //Randomly generate two polynomials f,g
         //The coefficients are randomly generated  
         let f = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
         let g = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
-        let (a, b, gcd) = extended_gcd_poly(&f, &g);
+        let (a, b, gcd) = extended_gcd_poly(&f, &g, &phi);
         let result = a.clone() * f.clone() + b.clone() * g.clone();
         assert!(result.equal(&gcd, &phi), "GCD is incorrect");
         println!("GCD of {:?} and {:?}: {:?}, a = {:?}, b = {:?}", f, g, gcd, a, b);
@@ -440,6 +448,17 @@ pub fn test_poly_sum(){
     let h = f+g; // h = f + g = 7 + 7x + 9x^2 + 24x^3 + 33x^4
     let correctanswer=Polynomial::new(vec![7, 7, 9, 24, 33]);
     assert!(h.equal(&correctanswer, &phi), "Polynomial multiplication is incorrect");
+}
+
+pub fn test_leading_coeff(){
+    let f = Polynomial::new(vec![1, 2, 1, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    assert_eq!(f.leading_coeff(),3);
+    assert_eq!(g.leading_coeff(),6);
+    let f = Polynomial::new(vec![1, 2, 1, 30,0,0]); // f = 1 + 2x + 3x^2
+    assert_eq!(f.leading_coeff(),30);
+    let f =Polynomial::new(vec![0]); // f = 1 + 2x + 3x^2
+    assert_eq!(f.leading_coeff(),0);
 }
 
 

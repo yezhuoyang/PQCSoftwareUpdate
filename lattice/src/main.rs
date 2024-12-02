@@ -146,9 +146,15 @@ fn main() {
 }
 */
 
+
+
+
 fn main() {
     //test_poly_deletion();
     //test_poly_equal();
     //test_poly_sum();
-    test_poly_multiplication();
+    //test_poly_multiplication();
+    //extended_gcd_poly_test();
+    //extended_gcd_poly_example();
+    test_leading_coeff()
 }
