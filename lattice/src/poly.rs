@@ -7,13 +7,54 @@ use ndarray::Array2;
 use num::complex::Complex;
 use ndarray_linalg::solve::Determinant;
 use ndarray::Axis;
-
+use rand::Rng;
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
 pub struct Polynomial {
     coefficients: Vec<i64>, // Coefficients of the polynomial
 }
+
+
+
+//The extended gcd algorithm for integers. Input a,b
+//Return s,t,gcd(a,b), such that sa+tb=gcd(a,b)
+pub fn extended_gcd_integer(a: i64, b: i64) -> (i64, i64, i64) {
+    let mut old_r = a;
+    let mut r = b;
+    let mut old_s = 1;
+    let mut s = 0;
+    let mut old_t = 0;
+    let mut t = 1;
+    while r != 0 {
+        let quotient = old_r / r;
+        let temp_r = r;
+        r = old_r - quotient * r;
+        old_r = temp_r;
+
+        let temp_s = s;
+        s = old_s - quotient * s;
+        old_s = temp_s;
+
+        let temp_t = t;
+        t = old_t - quotient * t;
+        old_t = temp_t;
+    }
+    (old_s, old_t, old_r)
+}
+
+pub fn extended_gcd_integer_test() {
+    // Test the extended GCD algorithm for integers
+    // Randomly generated two large numbers for 100 times
+    for _ in 0..100 {
+        let a = rand::thread_rng().gen_range(1..1000);
+        let b = rand::thread_rng().gen_range(1..1000);
+        let (s, t, gcd) = extended_gcd_integer(a, b);
+        assert_eq!(s * a + t * b, gcd, "GCD is incorrect");
+        println!("GCD of {} and {}: {}, s = {}, t = {}", a, b, gcd, s, t);
+    }
+}
+
 
 
 //Use Gaussian elimination to calculate the determinant of an integer matrix
@@ -122,7 +163,9 @@ impl Polynomial {
         let phideg=phi.degree();
         let selfdegree: usize=self.degree();
         if selfdegree<phideg{
-            return self.clone();
+            let mut result=self.clone();
+            result.clear_zeros();
+            return result;
         }
         let gap=selfdegree-phideg;
         let selfcoeffts=self.coefficients.clone();
@@ -202,6 +245,7 @@ impl Polynomial {
 
     pub fn equal(&self, other: &Polynomial, phi: &Polynomial) -> bool {
         let newpoly=self.clone()-other.clone();
+        let modpoly=newpoly.mod_phi(phi);
         if newpoly.mod_phi(phi).degree()==0{
             true
         }
@@ -262,7 +306,7 @@ impl Polynomial {
 
 //return gcd(f,g)
 // af+bg=gcd(f,g), return a,b,gcd(f,g)
-pub fn extended_gcd(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
+pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
     let mut old_r = f.clone();
     let mut r = g.clone();
     let mut old_a = Polynomial::new(vec![1]); // a_0 = 1
@@ -298,6 +342,105 @@ pub fn extended_gcd(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, 
     (old_a, old_b, old_r)
 }
 
+//Test the extended gcd algorithm of polynomial
+pub fn extended_gcd_poly_test() {
+    // Test the extended GCD algorithm for polynomials
+    // Randomly generated two polynomials for 100 times
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+    for _ in 0..100 {
+        //Randomly generate two polynomials f,g
+        //The coefficients are randomly generated  
+        let f = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
+        let g = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
+        let (a, b, gcd) = extended_gcd_poly(&f, &g);
+        let result = a.clone() * f.clone() + b.clone() * g.clone();
+        assert!(result.equal(&gcd, &phi), "GCD is incorrect");
+        println!("GCD of {:?} and {:?}: {:?}, a = {:?}, b = {:?}", f, g, gcd, a, b);
+    }
+}
+
+
+
+
+pub fn test_poly_equal(){
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+
+    let f = Polynomial::new(vec![1, 2, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    assert!(!f.equal(&g, &phi), "Polynomial equality is incorrect");
+
+    let h = Polynomial::new(vec![1, 2, 3]); // h = 1 + 2x + 3x^2
+    assert!(f.equal(&h, &phi), "Polynomial equality is incorrect");
+
+}
+
+
+
+
+pub fn test_poly_multiplication(){
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+
+    let f = Polynomial::new(vec![1, 2, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    let h = f * g; // h = f * g = 4 + 13x + 28x^2 + 27x^3 + 18x^4
+    let correctanswer=Polynomial::new(vec![4, 13, 28, 27, 18]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial multiplication is incorrect");
+
+    //Generate the second example
+    let f = Polynomial::new(vec![3, 2, 3,17, 25]); // f = 3 + 2x + 3x^2 + 17x^3 + 25x^4
+    let g = Polynomial::new(vec![4, 5, 6,7,8]); // g = 4 + 5x + 6x^2 + 7x^3 + 8x^4
+    let h = f * g; // h = f * g = 12 + 23x + 38x^2 + 101x^3 + 189x^4 + 191x^5 + 189x^6 + 200x^7 + 191x^8 + 200x^9 + 191x^10 + 200x^11 + 191x^12 + 200x^13 + 191x^14 + 200x^15
+    let correctanswer=Polynomial::new(vec![12,23,40,116,241,264,293,311,200]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial multiplication is incorrect");
+}
+
+
+pub fn test_poly_deletion(){
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+
+    let f = Polynomial::new(vec![1, 2, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    let h = f.delete(&g); // h = f - g = -3 - 3x - 3x^2
+    let correctanswer=Polynomial::new(vec![1-4, 2-5, 3-6]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial deletion is incorrect");
+
+    //Generate the second example
+    //Now f has larger order than g
+    let f = Polynomial::new(vec![3, 2, 3,17, 25,27,29]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6,7,8]); // g = 4 + 5x + 6x^2
+    let h = f.delete(&g); // h = f - g = -1 - 3x - 3x^2
+    let correctanswer=Polynomial::new(vec![3-4, 2-5, 3-6,17-7,25-8,27,29]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial deletion is incorrect");
+
+    //Generate the third example
+    //Now g has larger order than f
+    let g = Polynomial::new(vec![3, 2, 3,17, 25,27,29]); // f = 1 + 2x + 3x^2
+    let f = Polynomial::new(vec![4, 5, 6,7,8]); // g = 4 + 5x + 6x^2
+    let h = f.delete(&g); // h = f - g = -1 - 3x - 3x^2
+    let correctanswer=Polynomial::new(vec![4-3, 5-2, 6-3,7-17,8-25,-27,-29]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial deletion is incorrect");
+
+}
+
+
+
+
+pub fn test_poly_sum(){
+    let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+
+    let f = Polynomial::new(vec![1, 2, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
+    let h = f+g; // h = f + g = 5 + 7x + 9x^2
+    let correctanswer=Polynomial::new(vec![5, 7, 9]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial multiplication is incorrect");
+
+    //Generate the second example
+    let f = Polynomial::new(vec![3, 2, 3,17, 25]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![4, 5, 6,7,8]); // g = 4 + 5x + 6x^2
+    let h = f+g; // h = f + g = 7 + 7x + 9x^2 + 24x^3 + 33x^4
+    let correctanswer=Polynomial::new(vec![7, 7, 9, 24, 33]);
+    assert!(h.equal(&correctanswer, &phi), "Polynomial multiplication is incorrect");
+}
 
 
 impl fmt::Display for Polynomial{

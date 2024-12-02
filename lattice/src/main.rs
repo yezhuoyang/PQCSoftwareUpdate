@@ -147,9 +147,8 @@ fn main() {
 */
 
 fn main() {
-    let f = Polynomial::new(vec![3, 6, 9]); // 3 + 6x + 9x^2
-    let phi = Polynomial::new(vec![1,0,0,0,0,0,0,0,1]);    // x^8+1
-    let res=f.resultant(&phi);
-
-    println!("The resultant is {:?}",res);
+    //test_poly_deletion();
+    //test_poly_equal();
+    //test_poly_sum();
+    test_poly_multiplication();
 }
