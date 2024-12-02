@@ -5,20 +5,68 @@ use std::f64::consts::PI;
 use crate::config::*;
 use ndarray::Array2;
 use num::complex::Complex;
-
+use ndarray_linalg::solve::Determinant;
+use ndarray::Axis;
 
 
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
 pub struct Polynomial {
-    coefficients: Vec<i32>, // Coefficients of the polynomial
+    coefficients: Vec<i64>, // Coefficients of the polynomial
+}
+
+
+//Use Gaussian elimination to calculate the determinant of an integer matrix
+fn gaussian_elimination_determinant(mut matrix: Array2<i64>) -> i64 {
+    let n = matrix.nrows();
+    assert_eq!(n, matrix.ncols(), "Matrix must be square!");
+
+    let mut det = 1; // To track the determinant
+    for i in 0..n {
+        // Find the pivot row
+        let mut max_row = i;
+        for k in (i + 1)..n {
+            if matrix[[k, i]].abs() > matrix[[max_row, i]].abs() {
+                max_row = k;
+            }
+        }
+
+        // Swap rows if needed
+        if max_row != i {
+            for j in 0..n {
+                matrix.swap((i, j), (max_row, j));
+            }
+            det *= -1; // Adjust determinant sign
+        }
+
+        // Check if the matrix is singular
+        if matrix[[i, i]] == 0 {
+            return 0;
+        }
+
+        // Eliminate below the pivot
+        for k in (i + 1)..n {
+            if matrix[[i, i]] == 0 {
+                continue;
+            }
+            let factor = matrix[[k, i]] / matrix[[i, i]]; // Integer division
+            for j in i..n {
+                matrix[[k, j]] -= factor * matrix[[i, j]];
+            }
+        }
+
+        // Multiply determinant by the diagonal element
+        det *= matrix[[i, i]];
+    }
+
+    det
 }
 
 impl Polynomial {
     /// Creates a new polynomial with given coefficients and modulus
     /// The coefficients are reduced modulo q, i.e., coefficients[i] = coefficients[i] % q
     /// The coefficients are put in rising order of degrees. For example, [1, 2, 3] represents 1 + 2x + 3x^2
-    pub fn new(coefficients: Vec<i32>) -> Self {
+    pub fn new(coefficients: Vec<i64>) -> Self {
         let coefficients = coefficients.into_iter().map(|c| c.rem_euclid(q)).collect();
         Polynomial { coefficients}
     }
@@ -85,7 +133,7 @@ impl Polynomial {
     
     
     
-    pub fn to_matrix(&self, phi: &Polynomial) -> Vec<Vec<i32>> {
+    pub fn to_matrix(&self, phi: &Polynomial) -> Vec<Vec<i64>> {
         let n = phi.degree(); // Degree of φ
         let mut matrix = vec![vec![0; n]; n]; // Initialize an n x n matrix
     
@@ -114,25 +162,14 @@ impl Polynomial {
 
 
     
-    pub fn to_ndarray(&self, phi: &Polynomial) -> ndarray::Array2<i32> {
+    pub fn to_ndarray(&self, phi: &Polynomial) -> ndarray::Array2<i64> {
         let n = phi.degree(); // Degree of φ
-        let mut matrix = ndarray::Array2::<i32>::zeros((n, n)); // Initialize an n x n matrix
+        let mut matrix = ndarray::Array2::<i64>::zeros((n, n)); // Initialize an n x n matrix
     
         for i in 0..n {
             // Pass both the shift degree and the modulus polynomial
             let shifted_poly = self.shift(i);
             let reduced_poly = shifted_poly.mod_phi(phi);
-            /*
-            println!(
-                "x^{} * f = {:?} mod φ = {:?}",
-                i, shifted_poly.coefficients, reduced_poly.coefficients
-            );
-
-            println!(
-                "x^{} * f = {} mod φ = {}",
-                i, &shifted_poly, &reduced_poly
-            );
-            */
             // Fill the row with the reduced coefficients
             for (j, &coeff) in reduced_poly.coefficients.iter().enumerate() {
                 matrix[[j, i]] = coeff;
@@ -153,8 +190,8 @@ impl Polynomial {
         }
     }
 
-    pub fn multiple(&self, value: i32) -> Polynomial {
-        let new_coeffs: Vec<i32> = self
+    pub fn multiple(&self, value: i64) -> Polynomial {
+        let new_coeffs: Vec<i64> = self
             .coefficients
             .iter()
             .map(|&coeff| coeff * value)
@@ -179,7 +216,7 @@ impl Polynomial {
     }
 
     //Calculate the value of the polynomial at a given point x
-    pub fn calculate_value_int(&self, x: i32) -> i32 {
+    pub fn calculate_value_int(&self, x: i64) -> i64 {
         let mut result = 0;
         for (i, &coeff) in self.coefficients.iter().enumerate() {
             result += coeff * x.pow(i as u32);
@@ -205,6 +242,20 @@ impl Polynomial {
         result
     }
 
+    //Calculate the resultant of two polynomials
+    //Here, phi is monic, i.e., the leading coefficient is 1, so the resultant can be 
+    //calculated as the determinant of the Sylvester matrix
+    pub fn resultant(&self, phi: &Polynomial) -> i64 {
+        let syl=self.to_ndarray(phi);
+        //Convert syl to a ndarray stored with f64
+        let det=gaussian_elimination_determinant(syl);
+        det.rem_euclid(q)
+    }
+
+    //Calculate the complex zeros of the polynomial
+    pub fn zeros(&self) -> () {
+        ()
+    }
 
 }
 
@@ -363,7 +414,7 @@ pub fn fieldnorm(poly: &Polynomial) -> Polynomial {
 
 //Calculate all the unit roots of a given order n
 //The equation is x^n=1
-pub fn calculate_unit_roots(n: &i32) -> Vec<(f64, f64)> {
+pub fn calculate_unit_roots(n: &i64) -> Vec<(f64, f64)> {
     let n_as_f64 = *n as f64; // Convert the value of n to f64
     (0..*n) // Use n directly here as an integer
         .map(|k| {
@@ -380,7 +431,7 @@ pub fn FFT(poly: &Polynomial, phi: &Polynomial)-> Vec<f64>{
     let phideg=phi.degree();
     //Store the complex numbers as a vector of f64
     let mut fft=vec![0.0;2*phideg];
-    let unit_roots=calculate_unit_roots(&(phideg as i32));
+    let unit_roots=calculate_unit_roots(&(phideg as i64));
     for i in 0..phideg{
         let root=unit_roots[i];
         let mut sum=Complex::new(0.0,0.0);
@@ -416,8 +467,8 @@ fn vandermonde_matrix(input: &[f64], n: usize) -> Array2<Complex<f64>> {
 //Use the input fft vector to calculate the polynomial coefficients
 pub fn inverseFFT(phi: &Polynomial, fft: &Vec<f64>)->Polynomial{
     let phideg=phi.degree();
-    let mut coefficients=vec![0 as i32;phideg];
-    let unit_roots=calculate_unit_roots(&(phideg as i32));
+    let mut coefficients=vec![0 as i64;phideg];
+    let unit_roots=calculate_unit_roots(&(phideg as i64));
     for i in 0..phideg{
         let mut sum=Complex::new(0.0,0.0);
         for j in 0..phideg{
@@ -428,10 +479,10 @@ pub fn inverseFFT(phi: &Polynomial, fft: &Vec<f64>)->Polynomial{
             sum+=tmpcomplex*root.powf(-(i as f64));
         }
         if phideg>1{
-            coefficients[i]=(sum.re as i32 /(phideg as i32 -1)) as i32;
+            coefficients[i]=(sum.re as i64 /(phideg as i64 -1)) as i64;
         }
         else{
-            coefficients[i]=sum.re as i32;
+            coefficients[i]=sum.re as i64;
         }
     }
     Polynomial::new(coefficients)
@@ -440,7 +491,7 @@ pub fn inverseFFT(phi: &Polynomial, fft: &Vec<f64>)->Polynomial{
 
 
 //The NTT representation of a polynomial modulo phi
-pub fn NTT(poly: &Polynomial, phi: &Polynomial)-> Vec<i32>{
+pub fn NTT(poly: &Polynomial, phi: &Polynomial)-> Vec<i64>{
     let n=phi.degree();
     let mut ntt=vec![0;2*n];
     ntt

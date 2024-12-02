@@ -148,10 +148,8 @@ fn main() {
 
 fn main() {
     let f = Polynomial::new(vec![3, 6, 9]); // 3 + 6x + 9x^2
-    let g = Polynomial::new(vec![1, 2]);    // 1 + 2x
+    let phi = Polynomial::new(vec![1,0,0,0,0,0,0,0,1]);    // x^8+1
+    let res=f.resultant(&phi);
 
-    let (a, b, gcd) = extended_gcd(&f, &g);
-    println!("a: {:?}", a);
-    println!("b: {:?}", b);
-    println!("gcd: {:?}", gcd);
+    println!("The resultant is {:?}",res);
 }

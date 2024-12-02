@@ -45,23 +45,23 @@ pub struct NtruKeys {
     phi: Polynomial,
     f_inv_mod_q: Polynomial,
     h: Polynomial,
-    A: Vec<Vec<i32>>,
-    B: Vec<Vec<i32>>
+    A: Vec<Vec<i64>>,
+    B: Vec<Vec<i64>>
 }
 
 
 
 //Calculate the gram schmidt norm of the matrix B
 //We have to ensure that |B|<=1.17q**0.5
-fn GramSchmidtnorm(B:& Vec<Vec<i32>>)->f32{
+fn GramSchmidtnorm(B:& Vec<Vec<i64>>)->f32{
     0.0
 }
 
-fn LDL(B:& Vec<Vec<i32>>)->Vec<Vec<i32>>{
+fn LDL(B:& Vec<Vec<i64>>)->Vec<Vec<i64>>{
     vec![]
 }
 
-fn ffLDL(B:& Vec<Vec<i32>>)->Vec<Vec<i32>>{
+fn ffLDL(B:& Vec<Vec<i64>>)->Vec<Vec<i64>>{
     vec![]
 }
 
@@ -120,7 +120,7 @@ impl NtruKeys {
 
     //Generate the NTRU keys
     pub fn NTRUGen(phi: Polynomial) -> () {
-        let sigma=1.17*(q/(2*phi.degree()))**0.5;
+        //let sigma=1.17*(q/(2*phi.degree()))**0.5;
     }
 
 
@@ -132,7 +132,7 @@ impl NtruKeys {
     // Add signature to the message using the secret key, bounded by beta
     // The idea is find the shortest vector in the lattice space spanned by A, with the help of the dual 
     // lattice B.
-    pub fn sign(self, message: String, beta: i32) -> String{
+    pub fn sign(self, message: String, beta: i64) -> String{
         "22".to_string()
     }
 
@@ -157,7 +157,7 @@ impl NtruKeys {
         let mut reader = hasher.finalize_xof(); // Converts hasher to a SHAKE-256 XOF reader
     
         // Create a vector to store the coefficients with dimension n of the polynomial  
-        let mut coefficients: Vec<i32> = vec![0; ndim];
+        let mut coefficients: Vec<i64> = vec![0; ndim];
         
         let mut i = 0;
         while i < ndim {
@@ -166,7 +166,7 @@ impl NtruKeys {
             reader.read_exact(&mut buffer).expect("Failed to read bytes");
     
             // Combine two bytes into a 16-bit integer
-            let t = u16::from_le_bytes(buffer) as i32;
+            let t = u16::from_le_bytes(buffer) as i64;
     
             // Filter values based on the condition
             if t < k * q {
@@ -183,12 +183,12 @@ impl NtruKeys {
 
 
     //Fast Fourier Sampling
-    pub fn ffSampling(self, beta: i32) -> Polynomial{
+    pub fn ffSampling(self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
 
-    pub fn BaseSampler(self) -> i32{
+    pub fn BaseSampler(self) -> i64{
         0
     }
 
@@ -198,24 +198,24 @@ impl NtruKeys {
     }
 
     //Return a single bit, which equals 1 with probability ccs*e^{-x}
-    pub fn BerExp(x:f64,ccs:f64) -> i32{
+    pub fn BerExp(x:f64,ccs:f64) -> i64{
         0
     }
 
     
 
-    pub fn SamplerZ(self, mu: f64,sigma: f64) -> i32{
+    pub fn SamplerZ(self, mu: f64,sigma: f64) -> i64{
         let r=mu - mu.floor();
         let ccs=sigmamin/sigma;
-        while
+        0
     }
 
-    pub fn splitfft(self, beta: i32) -> Polynomial{
+    pub fn splitfft(self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
 
-    pub fn mergefft(self, beta: i32) -> Polynomial{
+    pub fn mergefft(self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
@@ -244,7 +244,7 @@ impl fmt::Display for NtruKeys{
 
 
 /// Verifies that the lattice A is orthogonal to the lattice B.
-pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array2<i32>) -> bool{
+pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i64>, Bmat:ndarray::Array2<i64>) -> bool{
     let Amat_shape = Amat.shape();
     let Bmat_shape = Bmat.shape();
     if Bmat_shape[1] != Amat_shape[1] {
@@ -257,7 +257,7 @@ pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array
 
 
 
-    let C=Cmat.iter().map(|&x| x%q).collect::<Vec<i32>>();
+    let C=Cmat.iter().map(|&x| x%q).collect::<Vec<i64>>();
     println!("{:?}",C);
 
     for i in 0..C.len(){
@@ -271,13 +271,13 @@ pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i32>, Bmat:ndarray::Array
 
 
 //Calculate the secret key, which is an ndarray matrix
-pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial) -> ndarray::Array2<i32> {
+pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial) -> ndarray::Array2<i64> {
    let fmat=f.to_ndarray(phi);
    let gmat=g.to_ndarray(phi);
    let Gmat=G.to_ndarray(phi);
    let Fmat=F.to_ndarray(phi);
    // Combine four matrices to get [[-gmat,-fmat],[G,-F]]
-   let mut B=Array2::<i32>::zeros((2*ndim,2*ndim));
+   let mut B=Array2::<i64>::zeros((2*ndim,2*ndim));
     for i in 0..ndim{
          for j in 0..ndim{
               B[[i,j]]=gmat[[i,j]];
@@ -289,10 +289,10 @@ pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Po
     B
 }
 
-pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial) -> ndarray::Array2<i32> {
+pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial) -> ndarray::Array2<i64> {
     let hmat=h.to_ndarray(Phi);
     // Construct new matrix [1|hmat], 1 is the identity of n*n matrix
-    let mut A=Array2::<i32>::zeros((ndim,2*ndim));
+    let mut A=Array2::<i64>::zeros((ndim,2*ndim));
     for i in 0..ndim{
         for j in 0..ndim{
             if i==j{
@@ -317,7 +317,7 @@ pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial) -> ndarray::Array2<
 /// 
 /// # Returns:
 /// - A vector of sampled coefficients.
-pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i32> {
+pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i64> {
     // Create a normal distribution with the specified mean and standard deviation
     let normal = Normal::new(mean, std_dev).unwrap();
 
@@ -326,7 +326,7 @@ pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i3
 
     // Generate coefficients
     (0..=n)
-        .map(|_| normal.sample(&mut rng).round() as i32) // Sample and round to nearest integer
+        .map(|_| normal.sample(&mut rng).round() as i64) // Sample and round to nearest integer
         .collect()
 }
 
