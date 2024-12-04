@@ -129,10 +129,12 @@ impl NtruKeys {
     //Generate the NTRU keys
     pub fn NTRUGen(phi: &Polynomial) -> Self {
         let sigma=100.0;
+        let dimension=phi.degree()-1;
+        println!("The phi is {}",phi);
         //Sampling two polynomials f and g from the distribution D_{\sigma}
-        let f=generate_gaussian_polynomial(ndim,0.0,sigma);
+        let f=generate_gaussian_polynomial(dimension,0.0,sigma);
         println!("The f is {}",f);
-        let g=generate_gaussian_polynomial(ndim,0.0,sigma);
+        let g=generate_gaussian_polynomial(dimension,0.0,sigma);
         println!("The g is {}",g);
         //Use extended Euclidean algorithm to get F and G
         let (G,minusF,gcd)=extended_gcd_poly(&f,&g);
