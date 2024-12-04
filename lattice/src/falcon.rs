@@ -131,20 +131,27 @@ impl NtruKeys {
         let sigma=100.0;
         //Sampling two polynomials f and g from the distribution D_{\sigma}
         let f=generate_gaussian_polynomial(ndim,0.0,sigma);
-        println!("The f is {:?}",f);
+        println!("The f is {}",f);
         let g=generate_gaussian_polynomial(ndim,0.0,sigma);
-        println!("The g is {:?}",g);
+        println!("The g is {}",g);
         //Use extended Euclidean algorithm to get F and G
-        let (F,G,gcd)=extended_gcd_poly(&f,&g);
+        let (G,minusF,gcd)=extended_gcd_poly(&f,&g);
+
+        let F=minusF.multiply_by_scalar(-1).mod_phi(&phi);
 
         let Q=gcd.leading_coefficient();
-        println!("The q is {:?}",q);
 
 
+        //Calculate the public key h, h=g*f^{-1} mod phi mod 1
+        let finverse=f.inverse(&phi,&q);
+        let h=(g.clone()*finverse.clone()).mod_phi(&phi);
 
-        println!("The F is {:?}",F);
-        println!("The G is {:?}",G);
-        println!("The gcd is {:?}",gcd);
+        println!("The q is {}",q);
+
+        println!("The F is {}",F);
+        println!("The G is {}",G);
+        println!("The q is {}",gcd);
+        println!("h is {}",h);
         NtruKeys {
             f:f,
             F:F,
@@ -174,7 +181,7 @@ impl NtruKeys {
     pub fn sign(&self, message: String, beta: i64) -> Vec<i64>{
         let messagepoly=self.HashtoPoint(&message) as Polynomial;
         let messagevec=messagepoly.to_vec();
-        println!("Generating message vec {:?}",messagevec);
+        println!("Hashing of message {:?}",messagevec);
         let Amatrix=calculate_public_key(&self.h,&self.phi);
         let A = array2_to_vecvec(Amatrix);
         let Bmatrix=calculate_secret_key(&self.f,&self.g,&self.G,&self.F,&self.phi);
@@ -182,7 +189,7 @@ impl NtruKeys {
         //Find one solution to the equation: A*s=messagevec
         let s=solve_linear_by_gaussian_elimination(&A,&messagevec,&q);
         let c0=solve_closest_vector_by_rounding_off(&B,&s,&q);
-        println!("The c0 is {:?}",c0);
+        //println!("The c0 is {:?}",c0);
         let result=vector_delete(&s,&c0,&self.Q);
         println!("The signature is {:?}",result);
         result

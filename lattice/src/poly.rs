@@ -571,7 +571,7 @@ pub fn test_leading_coeff(){
 
 impl fmt::Display for Polynomial{
     fn fmt(&self, f: &mut fmt::Formatter<'_>)-> fmt::Result{
-        write!(f,"Polynomial (mod {}): ", q)?;
+        write!(f,":")?;
         let mut first=true;
         for(i,&coef) in self.coefficients.iter().enumerate().rev(){
             if coef !=0{

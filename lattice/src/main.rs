@@ -21,11 +21,13 @@ use std::io;
 
 
 
+use std::io::{Write, BufWriter};
+use std::time::Instant;
+
+
 fn read_string_from_file(file_path: &str) -> Result<String, io::Error> {
     fs::read_to_string(file_path)
 }
-
-
 
 
 
@@ -58,9 +60,15 @@ fn main() {
     //test_calculate_matrix_inverse();
     //test_nearest_integer_mod_q();
     //test_solve_closest_vector_by_rounding_off();
-    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
-    let ntrukeys=falcon::NtruKeys::NTRUGen(&phi);
-
     
+    let beta = 1;
+    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0,0,0,0,0,0,0,0,0,0, 1]); // φ = x^8 + 1
+    let ntrukeys=falcon::NtruKeys::NTRUGen(&phi);
+    let message="Fuck you".to_string();
+    let signature=ntrukeys.sign(message,beta);
+    let newmessage="Fuck you".to_string();
+    //let verification=ntrukeys.verify(newmessage,&signature);
+    //println!("{}",verification);
+
 
 }
