@@ -9,7 +9,9 @@ mod config;
 use config::*; // Import all constants into the local scope
 
 mod number; // Declare the module
+use number::*; // Import all public items from utils
 mod linearAlg; // Declare the module
+use linearAlg::*; // Import all public items from utils
 
 use num::complex::Complex;
 use std::fs::File;
@@ -38,7 +40,9 @@ fn main() {
     //extended_gcd_poly_example();
     //test_leading_coeff()
     //test_determinant_gaussian_elimination();
-    test_poly_inverse();
+    //test_poly_inverse();
     //test_inverse_mod();
     //extended_gcd_poly_example();
+    test_solve_linear_by_gaussian_elimination();
+    //test_solve_linear_example();
 }

@@ -1,9 +1,28 @@
 use ndarray::Array2;
 use crate::number::inverse_mod;
 use rand::Rng;
-/// Solves the linear system A * x = y (mod q) using Gaussian elimination over integers modulo q.
-pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, y: Vec<i64>, Q: i64) -> Vec<i64> {
+
+
+
+pub fn matrix_vector_multiplication(A: &Vec<Vec<i64>>, x: &Vec<i64>, Q: &i64) -> Vec<i64> {
     let n = A.len();
+    if n == 0 || A[0].len() != x.len() {
+        panic!("Matrix A and vector x must have compatible dimensions.");
+    }
+    let mut y = vec![0; n];
+    for i in 0..n {
+        for j in 0..n {
+            y[i] = (y[i] + A[i][j] * x[j] % *Q) % *Q;
+        }
+    }
+    y
+}
+
+
+
+pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64) -> Vec<i64> {
+    let n = A.len();
+    let y= inputy.clone();
     if n == 0 || A[0].len() != n {
         panic!("Matrix A must be square.");
     }
@@ -13,10 +32,11 @@ pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, y: Vec<i64>, Q: i
 
     // Gaussian elimination
     for i in 0..n {
+
         // Find the pivot
         let mut pivot = i;
         for j in i + 1..n {
-            if B[j][i] % Q > B[pivot][i] % Q {
+            if B[j][i] % *Q > B[pivot][i] % *Q {
                 pivot = j;
             }
         }
@@ -26,39 +46,84 @@ pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, y: Vec<i64>, Q: i
         x.swap(i, pivot);
 
         // Ensure the pivot element is invertible
-        let pivot_value = B[i][i] % Q;
+        let pivot_value = B[i][i] % *Q;
         if pivot_value == 0 {
-            panic!("Matrix A is singular modulo {}", Q);
+            panic!("Matrix A is singular modulo {}", *Q);
         }
 
-        let pivot_inv = inverse_mod(pivot_value, Q);
+        let pivot_inv = inverse_mod(pivot_value, *Q);
 
         // Normalize the pivot row
         for j in i..n {
-            B[i][j] = (B[i][j] * pivot_inv) % Q;
+            B[i][j] = (B[i][j] * pivot_inv) % *Q;
         }
         x[i] = (x[i] * pivot_inv) % Q;
 
+
         // Eliminate the ith column for rows below
         for j in i + 1..n {
-            let factor = B[j][i] % Q;
+            let factor = B[j][i] % *Q;
             for k in i..n {
-                B[j][k] = (B[j][k] - factor * B[i][k] % Q + Q) % Q;
+                B[j][k] = (B[j][k] - factor * B[i][k] % *Q + *Q) % *Q;
             }
-            x[j] = (x[j] - factor * x[i] % Q + Q) % Q;
+            x[j] = (x[j] - factor * x[i] % *Q + *Q) % *Q; // Fix: Ensure elimination matches matrix
         }
     }
 
-    // Back substitution
     for i in (0..n).rev() {
         for j in i + 1..n {
-            x[i] = (x[i] - B[i][j] * x[j] % Q + Q) % Q;
+            x[i] = (x[i] - B[i][j] * x[j] % *Q + *Q) % *Q; // Modular arithmetic
         }
+        x[i] = (x[i] % *Q + *Q) % *Q; // Ensure solution remains within modular field
     }
-
     x
 }
 
+
+
+
+
+pub fn test_solve_linear_example(){
+    //Generate a single example of a 3*3 matrix and a 3*1 vector
+    //Solve the linear system using Gaussian elimination
+    //Check the result
+    let A = vec![vec![2, 3, 1], vec![1, 2, 1], vec![1, 1, 1]];
+    let y = vec![1, 2, 3];
+    let Q = 5;
+    let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);
+    println!("Solution: {:?}", x);
+    let result=matrix_vector_multiplication(&A, &x, &Q);
+    println!("Result: {:?}", result);
+    assert_eq!(y, result, "Solution is incorrect");
+}
+
+
+pub fn test_solve_linear_by_gaussian_elimination() {
+    // Test the solve_linear_by_gaussian_elimination function
+    // Randomly generated small 3*3,4*4,5*5 matrices, use brute force to calculate the determinant
+    // Compare the results
+    for _ in 0..100 {
+        let n = rand::thread_rng().gen_range(3..6);
+        let mut A = vec![vec![0; n]; n];
+        for i in 0..n {
+            for j in 0..n {
+                A[i][j] = rand::thread_rng().gen_range(0..10);
+            }
+        }
+        let mut y = vec![0; n];
+        for i in 0..n {
+            y[i] = rand::thread_rng().gen_range(0..10);
+        }
+        let Q = 15;
+        let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);
+
+        let result=matrix_vector_multiplication(&A, &x, &Q);
+
+        println!("Matrix A: {:?}", A);
+        println!("Vector y: {:?}", y);
+        assert_eq!(y, result, "Solution is incorrect");
+    }
+}
 
 
 //The extended gcd algorithm for integers. Input a,b
