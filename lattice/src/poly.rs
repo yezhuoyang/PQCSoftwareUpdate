@@ -99,9 +99,82 @@ fn gaussian_elimination_determinant(mut matrix: Array2<i64>) -> i64 {
         // Multiply determinant by the diagonal element
         det *= matrix[[i, i]];
     }
-
     det
 }
+
+
+pub fn brute_force_determinant(matrix: Array2<i64>) -> i64 {
+    let n = matrix.nrows();
+    assert_eq!(n, matrix.ncols(), "Matrix must be square!");
+
+    // Base case: 1x1 matrix
+    if n == 1 {
+        return matrix[[0, 0]];
+    }
+
+    // Base case: 2x2 matrix
+    if n == 2 {
+        return matrix[[0, 0]] * matrix[[1, 1]] - matrix[[0, 1]] * matrix[[1, 0]];
+    }
+
+    // Recursive case: compute determinant using Laplace expansion
+    let mut determinant = 0;
+    for col in 0..n {
+        // Get the minor matrix by excluding the current row and column
+        let minor = get_minor(&matrix, 0, col);
+        let sign = if col % 2 == 0 { 1 } else { -1 };
+        determinant += sign * matrix[[0, col]] * brute_force_determinant(minor);
+    }
+
+    determinant
+}
+
+fn get_minor(matrix: &Array2<i64>, row_to_remove: usize, col_to_remove: usize) -> Array2<i64> {
+    let n = matrix.nrows();
+    let mut minor = Array2::zeros((n - 1, n - 1));
+
+    let mut minor_row = 0;
+    for row in 0..n {
+        if row == row_to_remove {
+            continue;
+        }
+
+        let mut minor_col = 0;
+        for col in 0..n {
+            if col == col_to_remove {
+                continue;
+            }
+
+            minor[[minor_row, minor_col]] = matrix[[row, col]];
+            minor_col += 1;
+        }
+
+        minor_row += 1;
+    }
+
+    minor
+}
+
+
+pub fn test_determinant_gaussian_elimination() {
+    // Test the Gaussian elimination determinant algorithm
+    // Randomly generated small 3*3,4*4,5*5 matrices, use brute force to calculate the determinant
+    // Compare the results
+    for _ in 0..100 {
+        let n = rand::thread_rng().gen_range(3..6);
+        let mut matrix = Array2::<i64>::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                matrix[[i, j]] = rand::thread_rng().gen_range(0..10);
+            }
+        }
+        let det = gaussian_elimination_determinant(matrix.clone());
+        let det_brute = brute_force_determinant(matrix.clone());
+        assert_eq!(det, det_brute, "Determinant is incorrect");
+    } 
+}
+
+
 
 impl Polynomial {
     /// Creates a new polynomial with given coefficients and modulus
@@ -123,7 +196,7 @@ impl Polynomial {
         }
     }
 
-    pub fn leading_coeff(&self) -> i64 {
+    pub fn leading_coefficient(&self) -> i64 {
         let mut tmp=self.clone();
         tmp.clear_zeros();
         if tmp.coefficients.is_empty() {
@@ -169,7 +242,20 @@ impl Polynomial {
     }
 
 
+
+    pub fn multiply_by_scalar(&self, scalar: i64) -> Polynomial {
+        let new_coeffs: Vec<i64> = self
+            .coefficients
+            .iter()
+            .map(|&coeff| coeff * scalar)
+            .collect();
+    
+        Polynomial::new(new_coeffs)
+    }
+
+
     //Modulus of the polynomial
+    //Note that phi is monic, i.e., the leading coefficient is 1
     pub fn mod_phi(&self, phi: &Polynomial) -> Polynomial {
         let phideg=phi.degree();
         let selfdegree: usize=self.degree();
@@ -309,6 +395,14 @@ impl Polynomial {
         det.rem_euclid(q)
     }
 
+
+
+    pub fn is_zero(&self) -> bool {
+        self.coefficients.is_empty()
+    }
+
+
+
     //Calculate the complex zeros of the polynomial
     pub fn zeros(&self) -> () {
         ()
@@ -316,9 +410,22 @@ impl Polynomial {
 
 }
 
+// Helper function to compute the least common multiple (LCM) of two integers
+fn lcm(a: i64, b: i64) -> i64 {
+    (a * b).abs() / gcd(a, b)
+}
 
-//return gcd(f,g)
-// af+bg=gcd(f,g) mod phi, return a,b,gcd(f,g)
+// Helper function to compute the greatest common divisor (GCD) of two integers
+fn gcd(a: i64, b: i64) -> i64 {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+
+// Assuming Polynomial is a struct with methods like degree(), leading_coefficient(), add(), delete(), multiply(), divide(), and mod_phi()
 pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
     let mut old_r = f.clone();
     let mut r = g.clone();
@@ -326,11 +433,48 @@ pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (P
     let mut a = Polynomial::new(vec![0]);     // a_1 = 0
     let mut old_b = Polynomial::new(vec![0]); // b_0 = 0
     let mut b = Polynomial::new(vec![1]);     // b_1 = 1
-    /*
-    while r.degree() > 0{
+    while r.degree() >= 0 && !r.is_zero() {
+        // Get leading coefficients
+        let leading_coeff_r = r.leading_coefficient();
+        let leading_coeff_old_r = old_r.leading_coefficient();
 
+        // Compute the least common multiple (LCM) of the leading coefficients
+        let lcm = lcm(leading_coeff_r, leading_coeff_old_r);
+
+        // Calculate scaling factors to eliminate the leading term
+        let scale_old_r = lcm / leading_coeff_old_r;
+        let scale_r = lcm / leading_coeff_r;
+
+        // Scale the polynomials
+        let scaled_old_r = old_r.multiply_by_scalar(scale_old_r);
+        let scaled_r = r.multiply_by_scalar(scale_r);
+
+        // Update r and old_r: r = scaled_old_r - x^deg_diff * scaled_r
+        let degree_diff = old_r.degree() - r.degree();
+        let scaled_r_shifted = scaled_r.shift(degree_diff);
+        let new_r = scaled_old_r.delete(&scaled_r_shifted).mod_phi(phi);
+
+        // Update a and old_a
+        let scaled_a = a.multiply_by_scalar(scale_r);
+        let scaled_old_a = old_a.multiply_by_scalar(scale_old_r);
+        let new_a = scaled_old_a.delete(&scaled_a).mod_phi(phi);
+
+        // Update b and old_b
+        let scaled_b = b.multiply_by_scalar(scale_r);
+        let scaled_old_b = old_b.multiply_by_scalar(scale_old_r);
+        let new_b = scaled_old_b.delete(&scaled_b).mod_phi(phi);
+
+        // Move to the next step
+        old_r = r;
+        r = new_r;
+
+        old_a = a;
+        a = new_a;
+
+        old_b = b;
+        b = new_b;
     }
-    */
+
     // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
     (old_a, old_b, old_r)
 }
@@ -342,8 +486,9 @@ pub fn extended_gcd_poly_example(){
     let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
     let (a, b, gcd) = extended_gcd_poly(&f, &g, &phi);
     let result = a.clone() * f.clone() + b.clone() * g.clone();
+    println!("GCD of {} and {}: {}, a = {}, b = {}", f, g, gcd, a, b);
+    println!("Result: {}", result);
     assert!(result.equal(&gcd, &phi), "GCD is incorrect");
-    println!("GCD of {:?} and {:?}: {:?}, a = {:?}, b = {:?}", f, g, gcd, a, b);
 }
 
 
@@ -453,12 +598,12 @@ pub fn test_poly_sum(){
 pub fn test_leading_coeff(){
     let f = Polynomial::new(vec![1, 2, 1, 3]); // f = 1 + 2x + 3x^2
     let g = Polynomial::new(vec![4, 5, 6]); // g = 4 + 5x + 6x^2
-    assert_eq!(f.leading_coeff(),3);
-    assert_eq!(g.leading_coeff(),6);
+    assert_eq!(f.leading_coefficient(),3);
+    assert_eq!(g.leading_coefficient(),6);
     let f = Polynomial::new(vec![1, 2, 1, 30,0,0]); // f = 1 + 2x + 3x^2
-    assert_eq!(f.leading_coeff(),30);
+    assert_eq!(f.leading_coefficient(),30);
     let f =Polynomial::new(vec![0]); // f = 1 + 2x + 3x^2
-    assert_eq!(f.leading_coeff(),0);
+    assert_eq!(f.leading_coefficient(),0);
 }
 
 

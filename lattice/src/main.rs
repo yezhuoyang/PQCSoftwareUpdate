@@ -156,5 +156,6 @@ fn main() {
     //test_poly_multiplication();
     //extended_gcd_poly_test();
     //extended_gcd_poly_example();
-    test_leading_coeff()
+    //test_leading_coeff()
+    test_determinant_gaussian_elimination();
 }

@@ -202,7 +202,6 @@ impl NtruKeys {
         0
     }
 
-    
 
     pub fn SamplerZ(self, mu: f64,sigma: f64) -> i64{
         let r=mu - mu.floor();
