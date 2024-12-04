@@ -54,5 +54,6 @@ fn main() {
     test_solve_linear_by_gaussian_elimination();
     */
     //test_calculate_matrix_inverse();
-    test_nearest_integer_mod_q();
+    //test_nearest_integer_mod_q();
+    test_solve_closest_vector_by_rounding_off();
 }

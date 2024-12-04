@@ -26,6 +26,26 @@ pub fn matrix_vector_multiplication(A: &Vec<Vec<i64>>, x: &Vec<i64>, Q: &i64) ->
 }
 
 
+pub fn matrix_matrix_multiplication(A: &Vec<Vec<i64>>, B: &Vec<Vec<i64>>, Q: &i64) -> Vec<Vec<i64>> {
+    let n = A.len();
+    let m = B[0].len();
+    let l = B.len();
+    if A[0].len() != l {
+        panic!("Matrix dimensions are incompatible.");
+    }
+    let mut C = vec![vec![0; m]; n];
+    for i in 0..n {
+        for j in 0..m {
+            for k in 0..l {
+                C[i][j] = (C[i][j] + A[i][k] * B[k][j] % *Q) % *Q;
+            }
+        }
+    }
+    C
+}
+
+
+
 pub fn test_matrix_multiplication_example(){
     let A = vec![vec![1,1, 0, 0], vec![0, 1, 0, 3], vec![0, 0, 1, 2]];
     let s = vec![3,3, 4, 1];
@@ -181,6 +201,30 @@ pub fn nearest_integer_mod_q(x: f64, Q: i64) -> i64 {
     x.rem_euclid(Q)
 }
 
+
+pub fn convert_int_vector_to_float_vector(A: &Vec<i64>) -> Vec <f64> {
+    let n = A.len();
+    let mut B = vec![0.0; n];
+    for i in 0..n {
+        B[i] = A[i] as f64;
+    }
+    B
+}
+
+pub fn convert_int_matrix_to_float_matrix(A: &Vec<Vec<i64>>) -> Vec<Vec<f64>> {
+    let n = A.len();
+    let m = A[0].len();
+    let mut B = vec![vec![0.0; m]; n];
+    for i in 0..n {
+        for j in 0..m {
+            B[i][j] = A[i][j] as f64;
+        }
+    }
+    B
+}
+
+
+
 pub fn test_nearest_integer_mod_q(){
     //Use some exmples
     let x1=-0.6;
@@ -196,8 +240,36 @@ pub fn test_nearest_integer_mod_q(){
 
 //First, extend the field to any real field, then solve the linear equation 
 //Then, round off the solution to the nearest integer
-pub fn solve_linear_equation_by_rounding_off(B: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64){
-    
+pub fn solve_closest_vector_by_rounding_off(B: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64)-> Vec<i64>{
+    //Calculate B inverse B^{-1}
+    let floatB=convert_int_matrix_to_float_matrix(B);
+    let floatBinv=calculate_matrix_inverse(&floatB);
+    //Conver y to float vector
+    let matrixinputy=vec![inputy.clone()];
+    let floaty=convert_int_matrix_to_float_matrix(&matrixinputy);
+    //Calculate floaty*B^{-1}
+    let float_coeffs=matrix_multiply_float(&floaty, &floatBinv);
+    //Round coeffs to the nearest integer
+    let mut coeffs=vec![vec![0; float_coeffs[0].len()]];
+    for i in 0..float_coeffs.len(){
+        coeffs[0][i]=nearest_integer_mod_q(float_coeffs[0][i], Q.clone());
+    }
+    //Multiply B back
+    let result=matrix_matrix_multiplication(&coeffs,B,Q);
+    result[0].clone()
+}
+
+
+pub fn test_solve_closest_vector_by_rounding_off(){
+    let B=vec![vec![3,2,3,1], vec![0,4,1,2], vec![4,0,4,3], vec![2,3,2,3]];
+    let rankB=row_rank_of_matrix(&B, &5);
+    if rankB!=4{
+        println!("Matrix B is singular, rank is {}", rankB);
+        return;
+    }
+    let s=vec![3,3,4,1];
+    let c0=solve_closest_vector_by_rounding_off(&B, &s, &5);
+    println!("Closest vector: {:?}", c0);
 }
 
 
