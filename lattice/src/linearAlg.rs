@@ -78,6 +78,111 @@ pub fn row_rank_of_matrix(A: &Vec<Vec<i64>>, Q: &i64) -> usize {
 }
 
 
+
+pub fn matrix_multiply_float(A: &Vec<Vec<f64>>, B: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    let n = A.len();
+    let m = B[0].len();
+    let l = B.len();
+    if A[0].len() != l {
+        panic!("Matrix dimensions are incompatible.");
+    }
+    let mut C = vec![vec![0.0; m]; n];
+    for i in 0..n {
+        for j in 0..m {
+            for k in 0..l {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    C
+}
+
+pub fn identity_matrix_float(n: usize) -> Vec<Vec<f64>> {
+    let mut I = vec![vec![0.0; n]; n];
+    for i in 0..n {
+        I[i][i] = 1.0;
+    }
+    I
+}
+
+
+pub fn calculate_matrix_inverse(B: &Vec<Vec<f64>>)->Vec<Vec<f64>>{
+    let n=B.len();
+    let mut A=vec![vec![0.0; n]; n];
+    for i in 0..n{
+        for j in 0..n{
+            A[i][j]=B[i][j];
+        }
+    }
+    let mut inv=vec![vec![0.0; n]; n];
+    for i in 0..n{
+        inv[i][i]=1.0;
+    }
+    for i in 0..n{
+        let mut pivot=i;
+        for j in i+1..n{
+            if A[j][i].abs()>A[pivot][i].abs(){
+                pivot=j;
+            }
+        }
+        if A[pivot][i]==0.0{
+            panic!("Matrix is singular");
+        }
+        if pivot!=i{
+            A.swap(i,pivot);
+            inv.swap(i,pivot);
+        }
+        let pivot_inv=1.0/A[i][i];
+        for j in 0..n{
+            A[i][j]*=pivot_inv;
+            inv[i][j]*=pivot_inv;
+        }
+        for j in 0..n{
+            if j!=i{
+                let factor=A[j][i];
+                for k in 0..n{
+                    A[j][k]-=factor*A[i][k];
+                    inv[j][k]-=factor*inv[i][k];
+                }
+            }
+        }
+    }
+    inv
+}
+
+
+pub fn test_calculate_matrix_inverse(){
+//Generate random 3*3,4*4,5*5 matrices B
+//Calculate the inverse Binverse using the function
+//Compare B*Binverse with identity matrix
+    for _ in 0..100{
+        let n=rand::thread_rng().gen_range(3..6);
+        let mut B=vec![vec![0.0; n]; n];
+        for i in 0..n{
+            for j in 0..n{
+                B[i][j]=rand::thread_rng().gen_range(0.0..10.0);
+            }
+        }
+        let Binverse=calculate_matrix_inverse(&B);
+        let I=identity_matrix_float(n);
+        let result=matrix_multiply_float(&B, &Binverse);
+        println!("Matrix B*Binverse: {:?}", result);
+        for i in 0..n{
+            for j in 0..n{
+                assert!((result[i][j]-I[i][j]).abs()<1e-6);
+            }
+        }
+    }
+}
+
+
+//First, extend the field to any real field, then solve the linear equation 
+//Then, round off the solution to the nearest integer
+pub fn solve_linear_equation_by_rounding_off(B: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64){
+    
+}
+
+
 pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64) -> Vec<i64> {
     let n = A.len(); // Number of rows
     let m = A[0].len(); // Number of columns

@@ -32,7 +32,7 @@ fn read_string_from_file(file_path: &str) -> Result<String, io::Error> {
 
 
 fn main() {
-    
+    /*
     let beta = 1;
     let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
     let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
@@ -48,8 +48,10 @@ fn main() {
     let newmessage="Fuck you".to_string();
     let verification=ntrukeys.verify(newmessage,&signature);
     println!("{}",verification);
+    */
     /*
     //test_matrix_multiplication_example();
     test_solve_linear_by_gaussian_elimination();
     */
+    test_calculate_matrix_inverse();
 }
