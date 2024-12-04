@@ -36,6 +36,9 @@ fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Resu
 }
 
 
+
+
+
 /// Represents the NTRU lattice keys
 pub struct NtruKeys {
     f: Polynomial,
@@ -125,26 +128,31 @@ impl NtruKeys {
 
 
     // Solve the NTRU equation to get F and G, and get the public key h, secret key
-    pub fn NTRUSolve(self, f: Polynomial, g: Polynomial, phi: Polynomial) -> (){
+    pub fn NTRUSolve(&self, f: Polynomial, g: Polynomial, phi: Polynomial) -> (){
 
     }
 
     // Add signature to the message using the secret key, bounded by beta
     // The idea is find the shortest vector in the lattice space spanned by A, with the help of the dual 
     // lattice B.
-    pub fn sign(self, message: String, beta: i64) -> String{
+    pub fn sign(&self, message: String, beta: i64) -> String{
+        let messagepoly=self.HashtoPoint(&message) as Polynomial;
+        let messagevec=messagepoly.to_vec();
+        let A=calculate_public_key(&self.h,&self.phi);
+        let B=calculate_secret_key(&self.f,&self.g,&self.G,&self.F,&self.phi);
+        //Find one solution to the equation: A*s=messagevec
         "22".to_string()
     }
 
 
     // Verify the signature using the public key
-    pub fn verify(self, message: String, signature: String) -> bool{
+    pub fn verify(&self, message: String, signature: String) -> bool{
         true
     }
 
 
     // Convert the hash of the message to a polynomial
-    pub fn HashtoPoint(self, message: &String) -> Polynomial{
+    pub fn HashtoPoint(&self, message: &String) -> Polynomial{
         let k = (1 << 16) / q; // 2^16 / q, rounded down (integer division)
 
         // Create a SHAKE-256 hasher
@@ -183,12 +191,12 @@ impl NtruKeys {
 
 
     //Fast Fourier Sampling
-    pub fn ffSampling(self, beta: i64) -> Polynomial{
+    pub fn ffSampling(&self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
 
-    pub fn BaseSampler(self) -> i64{
+    pub fn BaseSampler(&self) -> i64{
         0
     }
 
@@ -203,18 +211,18 @@ impl NtruKeys {
     }
 
 
-    pub fn SamplerZ(self, mu: f64,sigma: f64) -> i64{
+    pub fn SamplerZ(&self, mu: f64,sigma: f64) -> i64{
         let r=mu - mu.floor();
         let ccs=sigmamin/sigma;
         0
     }
 
-    pub fn splitfft(self, beta: i64) -> Polynomial{
+    pub fn splitfft(&self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
 
-    pub fn mergefft(self, beta: i64) -> Polynomial{
+    pub fn mergefft(&self, beta: i64) -> Polynomial{
         self.f.clone()
     }
 
@@ -271,10 +279,10 @@ pub fn verify_lattice_orthorgonal(Amat:ndarray::Array2<i64>, Bmat:ndarray::Array
 
 //Calculate the secret key, which is an ndarray matrix
 pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Polynomial, phi:&Polynomial) -> ndarray::Array2<i64> {
-   let fmat=f.to_ndarray(phi);
-   let gmat=g.to_ndarray(phi);
-   let Gmat=G.to_ndarray(phi);
-   let Fmat=F.to_ndarray(phi);
+   let fmat=f.to_ndarray(&phi);
+   let gmat=g.to_ndarray(&phi);
+   let Gmat=G.to_ndarray(&phi);
+   let Fmat=F.to_ndarray(&phi);
    // Combine four matrices to get [[-gmat,-fmat],[G,-F]]
    let mut B=Array2::<i64>::zeros((2*ndim,2*ndim));
     for i in 0..ndim{
@@ -288,8 +296,8 @@ pub fn calculate_secret_key(f: &Polynomial, g: &Polynomial, G:&Polynomial, F:&Po
     B
 }
 
-pub fn calculate_public_key(h: &Polynomial, Phi:&Polynomial) -> ndarray::Array2<i64> {
-    let hmat=h.to_ndarray(Phi);
+pub fn calculate_public_key(h: &Polynomial, phi:&Polynomial) -> ndarray::Array2<i64> {
+    let hmat=h.to_ndarray(phi);
     // Construct new matrix [1|hmat], 1 is the identity of n*n matrix
     let mut A=Array2::<i64>::zeros((ndim,2*ndim));
     for i in 0..ndim{

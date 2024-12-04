@@ -3,175 +3,24 @@ use std::ops::{Add, Mul, Sub, Rem};
 use std::default::Default;
 use std::f64::consts::PI;
 use crate::config::*;
+
+
+use crate::linearAlg::*;
+use crate::number::*;
+
 use ndarray::Array2;
 use num::complex::Complex;
 //use ndarray_linalg::solve::Determinant;
 use ndarray::Axis;
 use rand::Rng;
 
+
+
+
 /// Represents a polynomial over Z_q[x]
 #[derive(Debug, Clone)]
 pub struct Polynomial {
     coefficients: Vec<i64>, // Coefficients of the polynomial
-}
-
-
-
-//The extended gcd algorithm for integers. Input a,b
-//Return s,t,gcd(a,b), such that sa+tb=gcd(a,b)
-pub fn extended_gcd_integer(a: i64, b: i64) -> (i64, i64, i64) {
-    let mut old_r = a;
-    let mut r = b;
-    let mut old_s = 1;
-    let mut s = 0;
-    let mut old_t = 0;
-    let mut t = 1;
-    while r != 0 {
-        let quotient = old_r / r;
-        let temp_r = r;
-        r = old_r - quotient * r;
-        old_r = temp_r;
-
-        let temp_s = s;
-        s = old_s - quotient * s;
-        old_s = temp_s;
-
-        let temp_t = t;
-        t = old_t - quotient * t;
-        old_t = temp_t;
-    }
-    (old_s, old_t, old_r)
-}
-
-pub fn extended_gcd_integer_test() {
-    // Test the extended GCD algorithm for integers
-    // Randomly generated two large numbers for 100 times
-    for _ in 0..100 {
-        let a = rand::thread_rng().gen_range(1..1000);
-        let b = rand::thread_rng().gen_range(1..1000);
-        let (s, t, gcd) = extended_gcd_integer(a, b);
-        assert_eq!(s * a + t * b, gcd, "GCD is incorrect");
-        println!("GCD of {} and {}: {}, s = {}, t = {}", a, b, gcd, s, t);
-    }
-}
-
-
-
-//Use Gaussian elimination to calculate the determinant of an integer matrix
-fn gaussian_elimination_determinant(mut matrix: Array2<i64>) -> i64 {
-    let n = matrix.nrows();
-    assert_eq!(n, matrix.ncols(), "Matrix must be square!");
-
-    let mut det = 1; // To track the determinant
-    for i in 0..n {
-        // Find the pivot row
-        let mut max_row = i;
-        for k in (i + 1)..n {
-            if matrix[[k, i]].abs() > matrix[[max_row, i]].abs() {
-                max_row = k;
-            }
-        }
-
-        // Swap rows if needed
-        if max_row != i {
-            for j in 0..n {
-                matrix.swap((i, j), (max_row, j));
-            }
-            det *= -1; // Adjust determinant sign
-        }
-
-        // Check if the matrix is singular
-        if matrix[[i, i]] == 0 {
-            return 0;
-        }
-
-        // Eliminate below the pivot
-        for k in (i + 1)..n {
-            if matrix[[i, i]] == 0 {
-                continue;
-            }
-            let factor = matrix[[k, i]] / matrix[[i, i]]; // Integer division
-            for j in i..n {
-                matrix[[k, j]] -= factor * matrix[[i, j]];
-            }
-        }
-
-        // Multiply determinant by the diagonal element
-        det *= matrix[[i, i]];
-    }
-    det
-}
-
-
-pub fn brute_force_determinant(matrix: Array2<i64>) -> i64 {
-    let n = matrix.nrows();
-    assert_eq!(n, matrix.ncols(), "Matrix must be square!");
-
-    // Base case: 1x1 matrix
-    if n == 1 {
-        return matrix[[0, 0]];
-    }
-
-    // Base case: 2x2 matrix
-    if n == 2 {
-        return matrix[[0, 0]] * matrix[[1, 1]] - matrix[[0, 1]] * matrix[[1, 0]];
-    }
-
-    // Recursive case: compute determinant using Laplace expansion
-    let mut determinant = 0;
-    for col in 0..n {
-        // Get the minor matrix by excluding the current row and column
-        let minor = get_minor(&matrix, 0, col);
-        let sign = if col % 2 == 0 { 1 } else { -1 };
-        determinant += sign * matrix[[0, col]] * brute_force_determinant(minor);
-    }
-
-    determinant
-}
-
-fn get_minor(matrix: &Array2<i64>, row_to_remove: usize, col_to_remove: usize) -> Array2<i64> {
-    let n = matrix.nrows();
-    let mut minor = Array2::zeros((n - 1, n - 1));
-
-    let mut minor_row = 0;
-    for row in 0..n {
-        if row == row_to_remove {
-            continue;
-        }
-
-        let mut minor_col = 0;
-        for col in 0..n {
-            if col == col_to_remove {
-                continue;
-            }
-
-            minor[[minor_row, minor_col]] = matrix[[row, col]];
-            minor_col += 1;
-        }
-
-        minor_row += 1;
-    }
-
-    minor
-}
-
-
-pub fn test_determinant_gaussian_elimination() {
-    // Test the Gaussian elimination determinant algorithm
-    // Randomly generated small 3*3,4*4,5*5 matrices, use brute force to calculate the determinant
-    // Compare the results
-    for _ in 0..100 {
-        let n = rand::thread_rng().gen_range(3..6);
-        let mut matrix = Array2::<i64>::zeros((n, n));
-        for i in 0..n {
-            for j in 0..n {
-                matrix[[i, j]] = rand::thread_rng().gen_range(0..10);
-            }
-        }
-        let det = gaussian_elimination_determinant(matrix.clone());
-        let det_brute = brute_force_determinant(matrix.clone());
-        assert_eq!(det, det_brute, "Determinant is incorrect");
-    } 
 }
 
 
@@ -183,6 +32,11 @@ impl Polynomial {
     pub fn new(coefficients: Vec<i64>) -> Self {
         let coefficients = coefficients.into_iter().map(|c| c.rem_euclid(q)).collect();
         Polynomial { coefficients}
+    }
+
+
+    pub fn to_vec(&self) -> Vec<i64> {
+        self.coefficients.clone()
     }
 
 
@@ -444,35 +298,6 @@ impl Polynomial {
         Polynomial::new(new_coeffs)
     }
 
-}
-
-// Helper function to compute the least common multiple (LCM) of two integers
-fn lcm(a: i64, b: i64) -> i64 {
-    (a * b).abs() / gcd(a, b)
-}
-
-// Helper function to compute the greatest common divisor (GCD) of two integers
-fn gcd(a: i64, b: i64) -> i64 {
-    if b == 0 {
-        a
-    } else {
-        gcd(b, a % b)
-    }
-}
-
-//Calculate the inverse ainverse of a modulo m, such that a*ainverse=1 mod m
-fn inverse_mod(a: i64, m: i64) -> i64 {
-    let (inv, _, _) = extended_gcd_integer(a, m);
-    inv.rem_euclid(m)
-}
-
-
-pub fn test_inverse_mod(){
-    let a=3;
-    let m=7;
-    let inv=inverse_mod(a,m);
-    println!("The inverse of {} modulo {} is {}",a,m,inv);
-    assert_eq!(a*inv%m,1);
 }
 
 
