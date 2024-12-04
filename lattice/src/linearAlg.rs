@@ -244,6 +244,7 @@ pub fn solve_closest_vector_by_rounding_off(B: &Vec<Vec<i64>>, inputy: &Vec<i64>
     //Calculate B inverse B^{-1}
     let floatB=convert_int_matrix_to_float_matrix(B);
     let floatBinv=calculate_matrix_inverse(&floatB);
+
     //Conver y to float vector
     let matrixinputy=vec![inputy.clone()];
     let floaty=convert_int_matrix_to_float_matrix(&matrixinputy);
@@ -258,6 +259,21 @@ pub fn solve_closest_vector_by_rounding_off(B: &Vec<Vec<i64>>, inputy: &Vec<i64>
     let result=matrix_matrix_multiplication(&coeffs,B,Q);
     result[0].clone()
 }
+
+
+//return v1-v2
+pub fn vector_delete(v1: &Vec<i64>, v2: &Vec<i64>, Q: &i64) -> Vec<i64> {
+    let n = v1.len();
+    if n != v2.len() {
+        panic!("Vector dimensions are incompatible.");
+    }
+    let mut result = vec![0; n];
+    for i in 0..n {
+        result[i] = (v1[i] - v2[i] + *Q) % *Q;
+    }
+    result
+}
+
 
 
 pub fn test_solve_closest_vector_by_rounding_off(){

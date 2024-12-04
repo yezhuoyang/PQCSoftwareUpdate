@@ -49,11 +49,18 @@ fn main() {
     let verification=ntrukeys.verify(newmessage,&signature);
     println!("{}",verification);
     */
+
+
     /*
     //test_matrix_multiplication_example();
     test_solve_linear_by_gaussian_elimination();
     */
     //test_calculate_matrix_inverse();
     //test_nearest_integer_mod_q();
-    test_solve_closest_vector_by_rounding_off();
+    //test_solve_closest_vector_by_rounding_off();
+    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
+    let ntrukeys=falcon::NtruKeys::NTRUGen(&phi);
+
+    
+
 }

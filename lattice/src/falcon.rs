@@ -1,4 +1,4 @@
-use crate::poly::Polynomial;
+use crate::poly::*;
 use crate::config::*;
 use std::fmt;
 use std::io::{self, Read};
@@ -9,6 +9,7 @@ use std::default::Default;
 use rand_distr::{Distribution, Normal};
 use ndarray::arr2;
 use ndarray::Array2;
+
 
 use crate::linearAlg::*;
 
@@ -50,6 +51,7 @@ pub struct NtruKeys {
     phi: Polynomial,
     f_inv_mod_q: Polynomial,
     h: Polynomial,
+    Q: i64,
     A: Vec<Vec<i64>>,
     B: Vec<Vec<i64>>
 }
@@ -88,6 +90,7 @@ impl Default for NtruKeys {
             phi: Polynomial::default(),
             f_inv_mod_q: Polynomial::default(),
             h: Polynomial::default(),
+            Q:q,
             A: vec![],
             B: vec![]
         }
@@ -124,13 +127,44 @@ impl NtruKeys {
 
 
     //Generate the NTRU keys
-    pub fn NTRUGen(phi: Polynomial) -> () {
-        //let sigma=1.17*(q/(2*phi.degree()))**0.5;
+    pub fn NTRUGen(phi: &Polynomial) -> Self {
+        let sigma=100.0;
+        //Sampling two polynomials f and g from the distribution D_{\sigma}
+        let f=generate_gaussian_polynomial(ndim,0.0,sigma);
+        println!("The f is {:?}",f);
+        let g=generate_gaussian_polynomial(ndim,0.0,sigma);
+        println!("The g is {:?}",g);
+        //Use extended Euclidean algorithm to get F and G
+        let (F,G,gcd)=extended_gcd_poly(&f,&g);
+
+        let Q=gcd.leading_coefficient();
+        println!("The q is {:?}",q);
+
+
+
+        println!("The F is {:?}",F);
+        println!("The G is {:?}",G);
+        println!("The gcd is {:?}",gcd);
+        NtruKeys {
+            f:f,
+            F:F,
+            g:g,
+            G:G,
+            Q:Q,
+            phi:phi.clone(),
+            ..Default::default() // Fill in the remaining members with default values
+        }
     }
 
 
     // Solve the NTRU equation to get F and G, and get the public key h, secret key
-    pub fn NTRUSolve(&self, f: Polynomial, g: Polynomial, phi: Polynomial) -> (){
+    /// Solve the NTRU equation using the recursive approach described in Algorithm 6.
+    pub fn NTRUSolve(f: &Polynomial, g: &Polynomial, phi: &Polynomial, Q: &i64) -> () {
+        // Base case: if the degree of phi is 1 (n=1)
+        // Use brute force to solve the equation
+        // fG-gF=q mod phi
+        // Two large matrices f and g, and two large matrices F and G are generated
+        
 
     }
 
@@ -147,8 +181,11 @@ impl NtruKeys {
         let B = array2_to_vecvec(Bmatrix);
         //Find one solution to the equation: A*s=messagevec
         let s=solve_linear_by_gaussian_elimination(&A,&messagevec,&q);
-        println!("The solution is {:?}",s);
-        s
+        let c0=solve_closest_vector_by_rounding_off(&B,&s,&q);
+        println!("The c0 is {:?}",c0);
+        let result=vector_delete(&s,&c0,&self.Q);
+        println!("The signature is {:?}",result);
+        result
     }
 
 
@@ -343,7 +380,8 @@ pub fn calculate_public_key(h: &Polynomial, phi:&Polynomial) -> ndarray::Array2<
 /// 
 /// # Returns:
 /// - A vector of sampled coefficients.
-pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i64> {
+//Return a polynomial with coefficients sampled from a Gaussian distribution
+pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Polynomial {
     // Create a normal distribution with the specified mean and standard deviation
     let normal = Normal::new(mean, std_dev).unwrap();
 
@@ -351,9 +389,10 @@ pub fn generate_gaussian_polynomial(n: usize, mean: f64, std_dev: f64) -> Vec<i6
     let mut rng = rand::thread_rng();
 
     // Generate coefficients
-    (0..=n)
+    let coefficients=(0..=n)
         .map(|_| normal.sample(&mut rng).round() as i64) // Sample and round to nearest integer
-        .collect()
+        .collect();
+    Polynomial::new(coefficients)
 }
 
 

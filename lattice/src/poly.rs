@@ -40,6 +40,11 @@ impl Polynomial {
     }
 
 
+    pub fn ntru_norm(&self, phi_half: Polynomial) -> () {
+        // Compute the norm of the polynomial with respect to phi_half
+    }
+
+
     /// Degree of the polynomial
     pub fn degree(&self) -> usize {
         if self.coefficients.is_empty() {
@@ -225,7 +230,7 @@ impl Polynomial {
     //Calculate the inverse of the polynomial modulo phi
     //Here we use extended GCD algorithm to calculate the inverse
     //The inverse of f is g such that f*g=1 mod phi
-    pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
+    pub fn inverse(&self,phi: &Polynomial, Q: &i64)-> Polynomial{
         let (a,_,gcd)=extended_gcd_poly(self,phi);
         if gcd.degree()!=0{
             panic!("The polynomial is not invertible");
@@ -234,17 +239,17 @@ impl Polynomial {
         if gcdvalue==0{
             panic!("Wrong phi!");
         }
-        let gcdvalue_inverse=inverse_mod(gcdvalue,q);
+        let gcdvalue_inverse=inverse_mod(gcdvalue,*Q);
         a.multiple(gcdvalue_inverse)
     }
 
     //Calculate the value of the polynomial at a given point x
-    pub fn calculate_value_int(&self, x: i64) -> i64 {
+    pub fn calculate_value_int(&self, x: i64, Q: &i64) -> i64 {
         let mut result = 0;
         for (i, &coeff) in self.coefficients.iter().enumerate() {
             result += coeff * x.pow(i as u32);
         }
-        result.rem_euclid(q)
+        result.rem_euclid(*Q)
     }
 
     //Calculate the value of the polynomial of a floating point value x
@@ -268,11 +273,11 @@ impl Polynomial {
     //Calculate the resultant of two polynomials
     //Here, phi is monic, i.e., the leading coefficient is 1, so the resultant can be 
     //calculated as the determinant of the Sylvester matrix
-    pub fn resultant(&self, phi: &Polynomial) -> i64 {
+    pub fn resultant(&self, phi: &Polynomial,Q: &i64) -> i64 {
         let syl=self.to_ndarray(phi);
         //Convert syl to a ndarray stored with f64
         let det=gaussian_elimination_determinant(syl);
-        det.rem_euclid(q)
+        det.rem_euclid(*Q)
     }
 
 
@@ -699,7 +704,7 @@ pub fn test_poly_inverse_example(){
     let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
     let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
 
-    let finverse=f.inverse(&phi);
+    let finverse=f.inverse(&phi,&q);
 
     let result=(g*finverse).mod_phi(&phi).mod_q(&tmpq);
 
@@ -712,7 +717,7 @@ pub fn test_poly_inverse(){
     //Randomly generate 100 f, test if the inverse is correct
     for _ in 0..100{
         let f=Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
-        let finverse=f.inverse(&phi);
+        let finverse=f.inverse(&phi,&q);
         let result=(f.clone()*finverse).mod_phi(&phi).mod_q(&tmpq);
         assert!(result.equal_exact(&Polynomial::new(vec![1])), "Polynomial inverse is incorrect");
     }
