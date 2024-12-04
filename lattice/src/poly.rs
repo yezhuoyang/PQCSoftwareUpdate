@@ -234,7 +234,7 @@ impl Polynomial {
         let mut new_coeffs = vec![0; self_coeffs.len()];
         let index=0;
         for index in 0..self_coeffs.len(){
-                new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]).rem_euclid(q);
+                new_coeffs[index]=(self_coeffs[index]-other_coeffs[index]);
         }    
         let mut newpoly=Polynomial::new(new_coeffs);
         newpoly.clear_zeros(); 
@@ -340,6 +340,7 @@ impl Polynomial {
         Polynomial::new(new_coeffs)
     }
 
+    //Equality of two polynomials modulo phi
     pub fn equal(&self, other: &Polynomial, phi: &Polynomial) -> bool {
         let newpoly=self.clone()-other.clone();
         let modpoly=newpoly.mod_phi(phi);
@@ -351,11 +352,36 @@ impl Polynomial {
         }
     }
 
+    //Equality of two polynomials
+    //Simply compare all coefficients
+    pub fn equal_exact(&self, other: &Polynomial) -> bool{
+        let selfdegree=self.degree();
+        let otherdegree=other.degree();
+        if selfdegree!=otherdegree{
+            return false;
+        }
+        for i in 0..selfdegree{
+            if self.coefficients[i]!=other.coefficients[i]{
+                return false;
+            }
+        }
+        true
+    }
+
     //Calculate the inverse of the polynomial modulo phi
     //Here we use extended GCD algorithm to calculate the inverse
     //The inverse of f is g such that f*g=1 mod phi
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
-        self.clone()
+        let (a,_,gcd)=extended_gcd_poly(self,phi);
+        println!("The inverse of the polynomial is {}",a);
+        println!("The gcd of the polynomial is {}",gcd);
+        if gcd.degree()!=0{
+            panic!("The polynomial is not invertible");
+        }
+        if gcd.leading_coefficient()!=1{
+            panic!("The polynomial is not invertible");
+        }
+        a
     }
 
     //Calculate the value of the polynomial at a given point x
@@ -408,6 +434,16 @@ impl Polynomial {
         ()
     }
 
+    pub fn mod_q(&self,tmpq: &i64) -> Polynomial {
+        let new_coeffs: Vec<i64> = self
+            .coefficients
+            .iter()
+            .map(|&coeff| coeff.rem_euclid(*tmpq))
+            .collect();
+    
+        Polynomial::new(new_coeffs)
+    }
+
 }
 
 // Helper function to compute the least common multiple (LCM) of two integers
@@ -425,7 +461,7 @@ fn gcd(a: i64, b: i64) -> i64 {
 }
 
 
-pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
+pub fn extended_gcd_poly_mod(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
     let mut old_r = f.clone();
     let mut r = g.clone();
     let mut old_a = Polynomial::new(vec![1]); // a_0 = 1
@@ -489,11 +525,74 @@ pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (P
     (a, b, r)
 }
 
+
+pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
+    let mut old_r = f.clone();
+    let mut r = g.clone();
+    let mut old_a = Polynomial::new(vec![1]); // a_0 = 1
+    let mut a = Polynomial::new(vec![0]);     // a_1 = 0
+    let mut old_b = Polynomial::new(vec![0]); // b_0 = 0
+    let mut b = Polynomial::new(vec![1]);     // b_1 = 1
+
+    while !(r.degree() == 0) {
+        // Ensure the smaller-degree polynomial is on the left
+        if old_r.degree() < r.degree() {
+            std::mem::swap(&mut old_r, &mut r);
+            std::mem::swap(&mut old_a, &mut a);
+            std::mem::swap(&mut old_b, &mut b);
+        }
+
+        // Get leading coefficients and degrees
+        let leading_coeff_old_r = old_r.leading_coefficient();
+        let leading_coeff_r = r.leading_coefficient();
+        let degree_old_r = old_r.degree();
+        let degree_r = r.degree();
+
+        // Calculate the LCM of the leading coefficients
+        let lcm = lcm(leading_coeff_old_r, leading_coeff_r);
+
+        // Compute scaling factors
+        let scale_old_r = lcm / leading_coeff_old_r;
+        let scale_r = lcm / leading_coeff_r;
+
+        // Scale the polynomials
+        let scaled_old_r = old_r.multiply_by_scalar(scale_old_r);
+        let scaled_r = r.multiply_by_scalar(scale_r);
+
+        // Shift the lower-degree polynomial if necessary
+        let degree_diff = degree_old_r - degree_r;
+        let shifted_scaled_r = scaled_r.shift(degree_diff);
+
+        // Compute the new remainder
+        let new_r = scaled_old_r.delete(&shifted_scaled_r);
+
+        // Update coefficients a and b
+        let scaled_a = a.multiply_by_scalar(scale_r).shift(degree_diff);
+        let scaled_old_a = old_a.multiply_by_scalar(scale_old_r);
+        let new_a = scaled_old_a.delete(&scaled_a);
+
+        let scaled_b = b.multiply_by_scalar(scale_r).shift(degree_diff);
+        let scaled_old_b = old_b.multiply_by_scalar(scale_old_r);
+        let new_b = scaled_old_b.delete(&scaled_b);
+
+        // Move to the next step
+        old_r = r;
+        r = new_r;
+        old_a = a;
+        a = new_a;
+        old_b = b;
+        b = new_b;
+    }
+
+    // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
+    (a, b, r)
+}
+
 pub fn extended_gcd_poly_example(){
     let phi=Polynomial::new(vec![1,0,0,0,0,0,0,0,0,0,0,0,0,1]);
     let f = Polynomial::new(vec![1, 2,4, 3]); // f = 1 + 2x + 3x^2
     let g = Polynomial::new(vec![4, 5, 6,0,0,0,7]); // g = 4 + 5x + 6x^2
-    let (a, b, gcd) = extended_gcd_poly(&f, &g, &phi);
+    let (a, b, gcd) = extended_gcd_poly_mod(&f, &g, &phi);
     let result = a.clone() * f.clone() + b.clone() * g.clone();
     println!("Result: {}", result);
     assert!(result.equal(&gcd, &phi), "GCD is incorrect");
@@ -513,7 +612,7 @@ pub fn extended_gcd_poly_test() {
         //The coefficients are randomly generated  
         let f = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
         let g = Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
-        let (a, b, gcd) = extended_gcd_poly(&f, &g, &phi);
+        let (a, b, gcd) = extended_gcd_poly_mod(&f, &g, &phi);
         let result = a.clone() * f.clone() + b.clone() * g.clone();
         assert!(result.equal(&gcd, &phi), "GCD is incorrect");
         //println!("GCD:{}", gcd);
@@ -725,6 +824,40 @@ pub fn decompress(compressed: &String)-> Polynomial{
 pub fn fieldnorm(poly: &Polynomial) -> Polynomial {
     Polynomial::new(poly.coefficients.clone())
 }
+
+
+
+pub fn test_poly_example(){
+ 
+    let tmpq=12289 as i64;
+    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
+    let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
+    let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
+    let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
+
+    //verify that h=g*finv mode phi mode q
+    let leftg=(h.clone()*f).mod_phi(&phi).mod_q(&tmpq);
+    assert!(leftg.equal_exact(&g), "h=g*finv mod phi mod q is incorrect");
+}
+
+
+
+pub fn test_poly_inverse(){
+ 
+    let tmpq=12289 as i64;
+    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
+    let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
+    let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
+    let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
+
+
+    let finverse=f.inverse(&phi);
+
+    let result=(g*finverse).mod_phi(&phi).mod_q(&tmpq);
+
+    assert!(result.equal_exact(&h), "Polynomial inverse is incorrect");
+}
+
 
 
 
