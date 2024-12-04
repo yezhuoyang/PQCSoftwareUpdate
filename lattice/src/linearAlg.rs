@@ -2,21 +2,38 @@ use ndarray::Array2;
 use crate::number::inverse_mod;
 use rand::Rng;
 
+pub fn array2_to_vecvec<T: Clone>(array: Array2<T>) -> Vec<Vec<T>> {
+    array
+        .outer_iter() // Iterate over rows
+        .map(|row| row.to_vec()) // Convert each row to a Vec
+        .collect() // Collect rows into a Vec<Vec<T>>
+}
 
 
 pub fn matrix_vector_multiplication(A: &Vec<Vec<i64>>, x: &Vec<i64>, Q: &i64) -> Vec<i64> {
     let n = A.len();
-    if n == 0 || A[0].len() != x.len() {
+    let m = A[0].len();
+    if n == 0 || x.len()!= m {
         panic!("Matrix A and vector x must have compatible dimensions.");
     }
     let mut y = vec![0; n];
     for i in 0..n {
-        for j in 0..n {
+        for j in 0..m {
             y[i] = (y[i] + A[i][j] * x[j] % *Q) % *Q;
         }
     }
     y
 }
+
+
+pub fn test_matrix_multiplication_example(){
+    let A = vec![vec![1,1, 0, 0], vec![0, 1, 0, 3], vec![0, 0, 1, 2]];
+    let s = vec![3,3, 4, 1];
+    let y=matrix_vector_multiplication(&A, &s, &5);
+    let result=vec![1, 1, 1];
+    assert_eq!(y, result, "Matrix multiplication is incorrect");
+}
+
 
 
 pub fn row_rank_of_matrix(A: &Vec<Vec<i64>>, Q: &i64) -> usize {
@@ -62,18 +79,19 @@ pub fn row_rank_of_matrix(A: &Vec<Vec<i64>>, Q: &i64) -> usize {
 
 
 pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64) -> Vec<i64> {
-    let n = A.len();
-    let y= inputy.clone();
-    if n == 0 || A[0].len() != n {
-        panic!("Matrix A must be square.");
+    let n = A.len(); // Number of rows
+    let m = A[0].len(); // Number of columns
+
+    if n == 0 || inputy.len() != n {
+        panic!("Matrix A and vector y must have compatible dimensions.");
     }
 
     let mut B = A.clone();
-    let mut x = y.clone();
+    let mut x = vec![0; m]; // Solution vector for size m
+    let mut y = inputy.clone();
 
     // Gaussian elimination
     for i in 0..n {
-
         // Find the pivot
         let mut pivot = i;
         for j in i + 1..n {
@@ -82,9 +100,9 @@ pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>
             }
         }
 
-        // Swap rows in B and x
+        // Swap rows in B and y
         B.swap(i, pivot);
-        x.swap(i, pivot);
+        y.swap(i, pivot);
 
         // Ensure the pivot element is invertible
         let pivot_value = B[i][i] % *Q;
@@ -95,30 +113,32 @@ pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>
         let pivot_inv = inverse_mod(pivot_value, *Q);
 
         // Normalize the pivot row
-        for j in i..n {
+        for j in i..m {
             B[i][j] = (B[i][j] * pivot_inv) % *Q;
         }
-        x[i] = (x[i] * pivot_inv) % Q;
+        y[i] = (y[i] * pivot_inv) % *Q;
 
-
-        // Eliminate the ith column for rows below
-        for j in i + 1..n {
-            let factor = B[j][i] % *Q;
-            for k in i..n {
-                B[j][k] = (B[j][k] - factor * B[i][k] % *Q + *Q) % *Q;
+        // Eliminate the ith column for all rows except the pivot row
+        for j in 0..n {
+            if j != i {
+                let factor = B[j][i] % *Q;
+                for k in i..m {
+                    B[j][k] = (B[j][k] - factor * B[i][k] % *Q + *Q) % *Q;
+                }
+                y[j] = (y[j] - factor * y[i] % *Q + *Q) % *Q;
             }
-            x[j] = (x[j] - factor * x[i] % *Q + *Q) % *Q; // Fix: Ensure elimination matches matrix
         }
     }
 
-    for i in (0..n).rev() {
-        for j in i + 1..n {
-            x[i] = (x[i] - B[i][j] * x[j] % *Q + *Q) % *Q; // Modular arithmetic
-        }
-        x[i] = (x[i] % *Q + *Q) % *Q; // Ensure solution remains within modular field
+    // Back substitution (extract solution from reduced matrix)
+    for i in 0..n {
+        x[i] = y[i];
     }
+
+    // Return solution
     x
 }
+
 
 
 
@@ -159,6 +179,32 @@ pub fn test_solve_linear_by_gaussian_elimination() {
         let mut y = vec![0; n];
         for i in 0..n {
             y[i] = rand::thread_rng().gen_range(0..10);
+        }
+
+        let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);
+
+        let result=matrix_vector_multiplication(&A, &x, &Q);
+
+        println!("Matrix A: {:?}", A);
+        println!("Vector y: {:?}", y);
+        assert_eq!(y, result, "Solution is incorrect");
+    }
+
+    for _ in 0..100 {
+        let n = rand::thread_rng().gen_range(5..10);
+        let mut A = vec![vec![0; 2*n]; n];
+        for i in 0..n {
+            for j in 0..2*n {
+                A[i][j] = rand::thread_rng().gen_range(0..15);
+            }
+        }
+        let rowrank=row_rank_of_matrix(&A, &Q);
+        if rowrank!=n{
+            continue;
+        }
+        let mut y = vec![0; n];
+        for i in 0..n {
+            y[i] = rand::thread_rng().gen_range(0..15);
         }
 
         let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);

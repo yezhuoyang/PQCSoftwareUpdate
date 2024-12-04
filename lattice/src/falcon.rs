@@ -10,6 +10,8 @@ use rand_distr::{Distribution, Normal};
 use ndarray::arr2;
 use ndarray::Array2;
 
+use crate::linearAlg::*;
+
 
 /// Reads a file in binary mode and returns its SHAKE-256 hash.
 fn hash_file_with_shake256(file_path: &str, hash_output_size: usize) -> io::Result<String> {
@@ -135,19 +137,36 @@ impl NtruKeys {
     // Add signature to the message using the secret key, bounded by beta
     // The idea is find the shortest vector in the lattice space spanned by A, with the help of the dual 
     // lattice B.
-    pub fn sign(&self, message: String, beta: i64) -> String{
+    pub fn sign(&self, message: String, beta: i64) -> Vec<i64>{
         let messagepoly=self.HashtoPoint(&message) as Polynomial;
         let messagevec=messagepoly.to_vec();
-        let A=calculate_public_key(&self.h,&self.phi);
-        let B=calculate_secret_key(&self.f,&self.g,&self.G,&self.F,&self.phi);
+        println!("Generating message vec {:?}",messagevec);
+        let Amatrix=calculate_public_key(&self.h,&self.phi);
+        let A = array2_to_vecvec(Amatrix);
+        let Bmatrix=calculate_secret_key(&self.f,&self.g,&self.G,&self.F,&self.phi);
+        let B = array2_to_vecvec(Bmatrix);
         //Find one solution to the equation: A*s=messagevec
-        "22".to_string()
+        let s=solve_linear_by_gaussian_elimination(&A,&messagevec,&q);
+        println!("The solution is {:?}",s);
+        s
     }
 
 
     // Verify the signature using the public key
-    pub fn verify(&self, message: String, signature: String) -> bool{
-        true
+    pub fn verify(&self, message: String, signature: &Vec<i64>) -> bool{
+        //First verify the correctness of the signature
+        let messagepoly=self.HashtoPoint(&message) as Polynomial;
+        let messagevec=messagepoly.to_vec();
+        println!("Verifying message vec {:?}",messagevec);
+
+        let Amatrix=calculate_public_key(&self.h,&self.phi);
+        let A = array2_to_vecvec(Amatrix);
+        
+        let result=matrix_vector_multiplication(&A,signature,&q);
+        if result==messagevec{
+            return true;
+        }
+        false
     }
 
 
