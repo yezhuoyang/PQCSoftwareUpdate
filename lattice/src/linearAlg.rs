@@ -19,6 +19,47 @@ pub fn matrix_vector_multiplication(A: &Vec<Vec<i64>>, x: &Vec<i64>, Q: &i64) ->
 }
 
 
+pub fn row_rank_of_matrix(A: &Vec<Vec<i64>>, Q: &i64) -> usize {
+    let n = A.len();
+    let mut B = A.clone();
+    let mut rank = 0;
+    for i in 0..n {
+        // Find the pivot
+        let mut pivot = i;
+        for j in i + 1..n {
+            if B[j][i] % *Q > B[pivot][i] % *Q {
+                pivot = j;
+            }
+        }
+
+        // Swap rows in B
+        B.swap(i, pivot);
+
+        // Ensure the pivot element is invertible
+        let pivot_value = B[i][i] % *Q;
+        if pivot_value == 0 {
+            continue;
+        }
+
+        let pivot_inv = inverse_mod(pivot_value, *Q);
+
+        // Normalize the pivot row
+        for j in i..n {
+            B[i][j] = (B[i][j] * pivot_inv) % *Q;
+        }
+
+        // Eliminate the ith column for rows below
+        for j in i + 1..n {
+            let factor = B[j][i] % *Q;
+            for k in i..n {
+                B[j][k] = (B[j][k] - factor * B[i][k] % *Q + *Q) % *Q;
+            }
+        }
+        rank += 1;
+    }
+    rank
+}
+
 
 pub fn solve_linear_by_gaussian_elimination(A: &Vec<Vec<i64>>, inputy: &Vec<i64>, Q: &i64) -> Vec<i64> {
     let n = A.len();
@@ -87,9 +128,9 @@ pub fn test_solve_linear_example(){
     //Generate a single example of a 3*3 matrix and a 3*1 vector
     //Solve the linear system using Gaussian elimination
     //Check the result
-    let A = vec![vec![2, 3, 1], vec![1, 2, 1], vec![1, 1, 1]];
-    let y = vec![1, 2, 3];
-    let Q = 5;
+    let A = vec![vec![4, 0, 0, 9], vec![5, 5, 5, 4], vec![5, 2, 4, 2], vec![6, 6, 5, 0]];
+    let y = vec![2, 1, 1, 4];
+    let Q = 17;
     let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);
     println!("Solution: {:?}", x);
     let result=matrix_vector_multiplication(&A, &x, &Q);
@@ -102,6 +143,7 @@ pub fn test_solve_linear_by_gaussian_elimination() {
     // Test the solve_linear_by_gaussian_elimination function
     // Randomly generated small 3*3,4*4,5*5 matrices, use brute force to calculate the determinant
     // Compare the results
+    let Q = 23;
     for _ in 0..100 {
         let n = rand::thread_rng().gen_range(3..6);
         let mut A = vec![vec![0; n]; n];
@@ -110,11 +152,15 @@ pub fn test_solve_linear_by_gaussian_elimination() {
                 A[i][j] = rand::thread_rng().gen_range(0..10);
             }
         }
+        let rowrank=row_rank_of_matrix(&A, &Q);
+        if rowrank!=n{
+            continue;
+        }
         let mut y = vec![0; n];
         for i in 0..n {
             y[i] = rand::thread_rng().gen_range(0..10);
         }
-        let Q = 15;
+
         let x = solve_linear_by_gaussian_elimination(&A, &y, &Q);
 
         let result=matrix_vector_multiplication(&A, &x, &Q);
