@@ -373,15 +373,15 @@ impl Polynomial {
     //The inverse of f is g such that f*g=1 mod phi
     pub fn inverse(&self,phi: &Polynomial)-> Polynomial{
         let (a,_,gcd)=extended_gcd_poly(self,phi);
-        println!("The inverse of the polynomial is {}",a);
-        println!("The gcd of the polynomial is {}",gcd);
         if gcd.degree()!=0{
             panic!("The polynomial is not invertible");
         }
-        if gcd.leading_coefficient()!=1{
-            panic!("The polynomial is not invertible");
+        let gcdvalue=gcd.leading_coefficient();
+        if gcdvalue==0{
+            panic!("Wrong phi!");
         }
-        a
+        let gcdvalue_inverse=inverse_mod(gcdvalue,q);
+        a.multiple(gcdvalue_inverse)
     }
 
     //Calculate the value of the polynomial at a given point x
@@ -460,6 +460,22 @@ fn gcd(a: i64, b: i64) -> i64 {
     }
 }
 
+//Calculate the inverse ainverse of a modulo m, such that a*ainverse=1 mod m
+fn inverse_mod(a: i64, m: i64) -> i64 {
+    let (inv, _, _) = extended_gcd_integer(a, m);
+    inv.rem_euclid(m)
+}
+
+
+pub fn test_inverse_mod(){
+    let a=3;
+    let m=7;
+    let inv=inverse_mod(a,m);
+    println!("The inverse of {} modulo {} is {}",a,m,inv);
+    assert_eq!(a*inv%m,1);
+}
+
+
 
 pub fn extended_gcd_poly_mod(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -> (Polynomial, Polynomial, Polynomial) {
     let mut old_r = f.clone();
@@ -470,7 +486,7 @@ pub fn extended_gcd_poly_mod(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -
     let mut b = Polynomial::new(vec![1]);     // b_1 = 1
 
 
-    while !(r.degree() == 0) {
+    while !(r.is_zero()) {
 
         // Ensure the smaller-degree polynomial is on the left
         if old_r.degree() < r.degree() {
@@ -522,7 +538,7 @@ pub fn extended_gcd_poly_mod(f: &Polynomial, g: &Polynomial, phi: &Polynomial) -
     }
 
     // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
-    (a, b, r)
+    (old_a, old_b, old_r)
 }
 
 
@@ -534,7 +550,7 @@ pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynom
     let mut old_b = Polynomial::new(vec![0]); // b_0 = 0
     let mut b = Polynomial::new(vec![1]);     // b_1 = 1
 
-    while !(r.degree() == 0) {
+    while !(r.is_zero()) {
         // Ensure the smaller-degree polynomial is on the left
         if old_r.degree() < r.degree() {
             std::mem::swap(&mut old_r, &mut r);
@@ -585,7 +601,7 @@ pub fn extended_gcd_poly(f: &Polynomial, g: &Polynomial) -> (Polynomial, Polynom
     }
 
     // At this point, old_r is the GCD, and (old_a, old_b) are the coefficients.
-    (a, b, r)
+    (old_a, old_b, old_r)
 }
 
 pub fn extended_gcd_poly_example(){
@@ -593,6 +609,14 @@ pub fn extended_gcd_poly_example(){
     let f = Polynomial::new(vec![1, 2,4, 3]); // f = 1 + 2x + 3x^2
     let g = Polynomial::new(vec![4, 5, 6,0,0,0,7]); // g = 4 + 5x + 6x^2
     let (a, b, gcd) = extended_gcd_poly_mod(&f, &g, &phi);
+    let result = a.clone() * f.clone() + b.clone() * g.clone();
+    println!("Result: {}", result);
+    assert!(result.equal(&gcd, &phi), "GCD is incorrect");
+
+    //Test the case when f is a multiple of g
+    let f = Polynomial::new(vec![1, 2,4, 3]); // f = 1 + 2x + 3x^2
+    let g = Polynomial::new(vec![0,2, 4,8, 6]); // f = 1 + 2x + 3x^2
+    let (a, b, gcd) = extended_gcd_poly_mod(&f, &g, &phi);    
     let result = a.clone() * f.clone() + b.clone() * g.clone();
     println!("Result: {}", result);
     assert!(result.equal(&gcd, &phi), "GCD is incorrect");
@@ -842,14 +866,13 @@ pub fn test_poly_example(){
 
 
 
-pub fn test_poly_inverse(){
+pub fn test_poly_inverse_example(){
  
     let tmpq=12289 as i64;
     let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0, 1]); // φ = x^8 + 1
     let f=Polynomial::new(vec![-55,11,-23,-23,47,16,13,61]); //f
     let g=Polynomial::new(vec![-25,-24,30,-3,36,-39,6]); //g
     let h=Polynomial::new(vec![-4839,-6036,-4459,-2665,-186,-4303,3388,-3568]); //h
-
 
     let finverse=f.inverse(&phi);
 
@@ -858,6 +881,17 @@ pub fn test_poly_inverse(){
     assert!(result.equal_exact(&h), "Polynomial inverse is incorrect");
 }
 
+pub fn test_poly_inverse(){
+    let tmpq=12289 as i64;
+    let phi = Polynomial::new(vec![1, 0, 0, 0,0 ,0,0,0,0,0,0,0,0,0,0,0,0,1]); // φ = x^8 + 1
+    //Randomly generate 100 f, test if the inverse is correct
+    for _ in 0..100{
+        let f=Polynomial::new((0..8).map(|_| rand::thread_rng().gen_range(0..q)).collect());
+        let finverse=f.inverse(&phi);
+        let result=(f.clone()*finverse).mod_phi(&phi).mod_q(&tmpq);
+        assert!(result.equal_exact(&Polynomial::new(vec![1])), "Polynomial inverse is incorrect");
+    }
+}
 
 
 

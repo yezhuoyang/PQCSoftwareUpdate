@@ -159,4 +159,6 @@ fn main() {
     //test_leading_coeff()
     //test_determinant_gaussian_elimination();
     test_poly_inverse();
+    //test_inverse_mod();
+    //extended_gcd_poly_example();
 }
