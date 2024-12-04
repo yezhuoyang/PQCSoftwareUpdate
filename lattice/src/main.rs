@@ -53,5 +53,6 @@ fn main() {
     //test_matrix_multiplication_example();
     test_solve_linear_by_gaussian_elimination();
     */
-    test_calculate_matrix_inverse();
+    //test_calculate_matrix_inverse();
+    test_nearest_integer_mod_q();
 }

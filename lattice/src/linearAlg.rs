@@ -175,6 +175,24 @@ pub fn test_calculate_matrix_inverse(){
     }
 }
 
+pub fn nearest_integer_mod_q(x: f64, Q: i64) -> i64 {
+    let x = x.round();
+    let x = x as i64;
+    x.rem_euclid(Q)
+}
+
+pub fn test_nearest_integer_mod_q(){
+    //Use some exmples
+    let x1=-0.6;
+    let Q1=5;
+    let result1=nearest_integer_mod_q(x1, Q1);
+    assert_eq!(result1, 4);
+    let x2=1.8;
+    let Q2=7;
+    let result2=nearest_integer_mod_q(x2, Q2);
+    assert_eq!(result2, 2);
+}
+
 
 //First, extend the field to any real field, then solve the linear equation 
 //Then, round off the solution to the nearest integer
